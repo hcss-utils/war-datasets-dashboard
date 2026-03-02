@@ -52,7 +52,13 @@ export interface DashboardMetadata {
   exportTimestamp: string;
 }
 
-export type TabId = 'overview' | 'conflict' | 'viina' | 'bellingcat' | 'aerial' | 'equipment' | 'humanitarian' | 'territory' | 'events' | 'map' | 'sources';
+export type TabId = 'overview' | 'conflict' | 'aerial' | 'threats' | 'losses' | 'economic' | 'sabotage' | 'humanitarian' | 'events' | 'map' | 'sources';
+
+// Subtab types for tabs with 2-level navigation
+export type ThreatsSubtab = 'events' | 'coercive' | 'redlines' | 'varx';
+export type EconomicSubtab = 'energy' | 'aid' | 'military';
+export type SabotageSubtab = 'cyber' | 'disinfo' | 'infrastructure' | 'hybrid';
+export type ConflictSubtab = 'acled' | 'ucdp' | 'viina' | 'bellingcat' | 'acled-hdx' | 'comparison';
 
 // New data types for additional visualizations
 export interface OverviewStats {
@@ -69,6 +75,15 @@ export interface OverviewStats {
     total_personnel: number;
     ohchr_killed: number;
     ohchr_injured: number;
+    gdelt_threat_events?: number;
+    gdelt_coercive_records?: number;
+    gdelt_redline_records?: number;
+    gas_flow_records?: number;
+    fossil_revenue_records?: number;
+    eu_sanctions_entities?: number;
+    cyber_incidents?: number;
+    disinfo_cases?: number;
+    baltic_cable_incidents?: number;
   };
   date_ranges: {
     acled_start: string;
@@ -85,6 +100,10 @@ export interface OverviewStats {
     missiles_end: string;
     ohchr_start: string;
     ohchr_end: string;
+    gdelt_start?: string;
+    gdelt_end?: string;
+    gas_start?: string;
+    gas_end?: string;
   };
   export_timestamp: string;
 }
@@ -264,4 +283,198 @@ export interface BellingcatIncident {
   sources: string[];
   latitude: number;
   longitude: number;
+}
+
+// === GDELT Types ===
+export interface GdeltEventsDaily {
+  date: string;
+  events: number;
+  avg_goldstein: number;
+  total_mentions: number;
+}
+
+export interface GdeltEventsMonthly {
+  month: string;
+  events: number;
+  avg_goldstein: number;
+  total_mentions: number;
+}
+
+export interface GdeltEventsByTarget {
+  country: string;
+  name: string;
+  events: number;
+  avg_goldstein: number;
+}
+
+export interface GdeltGoldstein {
+  goldstein_bin: number;
+  count: number;
+}
+
+export interface GdeltCoerciveDaily {
+  day: string;
+  records: number;
+}
+
+export interface GdeltCoerciveMonthly {
+  month: string;
+  records: number;
+}
+
+export interface GdeltCoerciveSource {
+  source: string;
+  count: number;
+}
+
+export interface GdeltRedlinesMonthly {
+  month: string;
+  records: number;
+}
+
+export interface GdeltRedlinesSource {
+  source: string;
+  count: number;
+}
+
+export interface GdeltVarxWeekly {
+  week: string;
+  media_volume_all: number;
+  media_volume_russia: number;
+  media_tone_mean: number;
+  media_tone_std: number;
+  media_negativity_mean: number;
+  media_negativity_std: number;
+  nuclear_quote_count: number;
+  redline_quote_count: number;
+  threat_quote_count: number;
+  ultimatum_quote_count: number;
+  escalation_quote_count: number;
+  deter_quote_count: number;
+  russia_share: number;
+  year: number;
+  week_of_year: number;
+}
+
+// === Economic Types ===
+export interface EnergyGasFlow {
+  date: string;
+  norway: number;
+  algeria: number;
+  russia: number;
+  azerbaijan: number;
+  libya: number;
+  uk_net_flows: number;
+  lng: number;
+  eu_total: number;
+  nord_stream: number;
+  ukraine_gas_transit: number;
+  yamal_by_pl: number;
+  turkstream: number;
+}
+
+export interface EnergyFossilRevenue {
+  month: string;
+  destination_region: string;
+  pricing_scenario_name: string;
+  total_eur: number;
+  total_usd: number;
+}
+
+export interface KielAidByDonor {
+  donor: string;
+  aid_type_general: string;
+  commitments: number;
+  total_eur: number;
+}
+
+export interface KielAidTimeline {
+  month: string;
+  aid_type_general: string;
+  commitments: number;
+  total_eur: number;
+}
+
+export interface SanctionsEuSummary {
+  schema_type: string;
+  count: number;
+}
+
+export interface SanctionsEuTimeline {
+  month: string;
+  schema_type: string;
+  count: number;
+}
+
+export interface SipriExpenditure {
+  country: string;
+  year: number;
+  expenditure_usd: number;
+}
+
+// === Sabotage & Disinfo Types ===
+export interface CyberIncidentTimeline {
+  month: string;
+  incidents: number;
+}
+
+export interface CyberIncidentByCountry {
+  country: string;
+  incidents: number;
+}
+
+export interface DisinfoMonthly {
+  month: string;
+  cases: number;
+}
+
+export interface DisinfoByLanguage {
+  language: string;
+  count: number;
+}
+
+export interface BalticCableIncident {
+  id: number;
+  incident_name: string;
+  incident_date: string;
+  vessel_name: string | null;
+  vessel_flag: string | null;
+  damage_description: string | null;
+  cables_affected: string[] | null;
+  source_url: string | null;
+  notes: string | null;
+}
+
+export interface LeidenHybridEvent {
+  id: number;
+  incident_year: number;
+  incident_month: string | null;
+  incident_date_start: string | null;
+  what: string;
+  where_location: string | null;
+  event_category: string | null;
+  event_category_2: string | null;
+  apparent_goal_1: string | null;
+  apparent_goal_2: string | null;
+  target_type: string | null;
+  target_type_2: string | null;
+}
+
+// === ACLED HDX Types ===
+export interface AcledHdxMonthly {
+  year: string;
+  month: string;
+  admin1: string;
+  events: number;
+  fatalities: number;
+  data_type: 'violence' | 'civilian' | 'demonstrations';
+}
+
+export interface AcledHdxByRegion {
+  admin1: string;
+  violence_events: number | null;
+  violence_fatalities: number | null;
+  civilian_events: number | null;
+  civilian_fatalities: number | null;
+  demonstration_events: number | null;
 }

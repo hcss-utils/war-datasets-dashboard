@@ -3,13 +3,13 @@ import type { TabId } from '../types';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
-  { id: 'conflict', label: 'ACLED/UCDP' },
-  { id: 'viina', label: 'VIINA' },
-  { id: 'bellingcat', label: 'Bellingcat' },
+  { id: 'conflict', label: 'Conflict Events' },
   { id: 'aerial', label: 'Aerial Assaults' },
-  { id: 'equipment', label: 'Equipment' },
+  { id: 'threats', label: 'Threats & Rhetoric' },
+  { id: 'losses', label: 'Losses' },
+  { id: 'economic', label: 'Economic Impact' },
+  { id: 'sabotage', label: 'Sabotage & Disinfo' },
   { id: 'humanitarian', label: 'Humanitarian' },
-  { id: 'territory', label: 'Territory' },
   { id: 'events', label: 'Military Events' },
   { id: 'map', label: 'Map' },
   { id: 'sources', label: 'Sources' },

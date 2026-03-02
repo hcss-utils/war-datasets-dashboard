@@ -1378,3 +1378,115 @@ html, body, #root {
   font-size: 13px;
   margin-bottom: 20px;
 }
+
+/* ============================================
+   Subtab Navigation
+   ============================================ */
+.subtab-nav {
+  display: flex;
+  gap: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.subtab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 10px 16px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.subtab-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.subtab-btn.active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+/* New tab containers */
+.threats-tab h2,
+.economic-tab h2,
+.sabotage-tab h2,
+.unified-conflict-tab h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.threats-tab .tab-subtitle,
+.economic-tab .tab-subtitle,
+.sabotage-tab .tab-subtitle,
+.unified-conflict-tab .tab-subtitle {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+/* Incident cards (for Infrastructure & Hybrid panels) */
+.incidents-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.incident-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  transition: border-color 0.2s;
+}
+
+.incident-card:hover {
+  border-color: var(--color-accent);
+}
+
+.incident-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.incident-date {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+.incident-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.incident-detail {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.incident-detail strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.incident-notes {
+  font-style: italic;
+  color: var(--text-muted);
+}

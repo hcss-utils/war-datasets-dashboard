@@ -13,13 +13,14 @@ import EventScatterChart from './components/charts/EventScatterChart';
 import MetricDecomposition from './components/charts/MetricDecomposition';
 import SourcesTab from './components/SourcesTab';
 import OverviewTab from './components/OverviewTab';
-import ConflictEventsTab from './components/ConflictEventsTab';
-import ViinaTab from './components/ViinaTab';
-import BellingcatTab from './components/BellingcatTab';
+import UnifiedConflictEventsTab from './components/UnifiedConflictEventsTab';
 import AerialAssaultsTab from './components/AerialAssaultsTab';
 import EquipmentTab from './components/EquipmentTab';
 import HumanitarianTab from './components/HumanitarianTab';
-import type { DailyArea, MilitaryEvent, DashboardMetadata } from './types';
+import ThreatsTab from './components/ThreatsTab';
+import EconomicTab from './components/EconomicTab';
+import SabotageTab from './components/SabotageTab';
+import type { DailyArea, MilitaryEvent, DashboardMetadata, TabId } from './types';
 
 // Lazy-load the map to avoid SSR issues with Leaflet
 const TerritoryMap = React.lazy(() => import('./components/map/TerritoryMap'));
@@ -44,6 +45,8 @@ class ChartErrorBoundary extends React.Component<{ children: React.ReactNode; na
     return this.props.children;
   }
 }
+
+const VALID_TABS: TabId[] = ['overview', 'conflict', 'aerial', 'threats', 'losses', 'economic', 'sabotage', 'humanitarian', 'events', 'map', 'sources'];
 
 // ---- Dashboard Content (inside provider) ----
 function DashboardContent() {
@@ -95,8 +98,6 @@ function DashboardContent() {
   // Load territory GeoJSON date list from metadata
   useEffect(() => {
     if (!metadata) return;
-    // Fetch the list of available GeoJSON files from the territory directory
-    // We'll derive dates from the daily areas data by finding change points
     const controlData = dailyAreas
       .filter((d) => d.layerType === 'ukraine_control_map')
       .sort((a, b) => a.date.localeCompare(b.date));
@@ -115,9 +116,8 @@ function DashboardContent() {
   // URL hash sync
   useEffect(() => {
     const hash = window.location.hash.substring(1);
-    const validTabs = ['overview', 'conflict', 'viina', 'bellingcat', 'aerial', 'equipment', 'humanitarian', 'territory', 'events', 'map', 'sources'];
-    if (validTabs.includes(hash)) {
-      dispatch({ type: 'SET_TAB', payload: hash as any });
+    if (VALID_TABS.includes(hash as TabId)) {
+      dispatch({ type: 'SET_TAB', payload: hash as TabId });
     }
   }, [dispatch]);
 
@@ -159,19 +159,7 @@ function DashboardContent() {
 
       {state.activeTab === 'conflict' && (
         <ChartErrorBoundary name="Conflict Events">
-          <ConflictEventsTab />
-        </ChartErrorBoundary>
-      )}
-
-      {state.activeTab === 'viina' && (
-        <ChartErrorBoundary name="VIINA Events">
-          <ViinaTab />
-        </ChartErrorBoundary>
-      )}
-
-      {state.activeTab === 'bellingcat' && (
-        <ChartErrorBoundary name="Bellingcat">
-          <BellingcatTab />
+          <UnifiedConflictEventsTab />
         </ChartErrorBoundary>
       )}
 
@@ -181,9 +169,27 @@ function DashboardContent() {
         </ChartErrorBoundary>
       )}
 
-      {state.activeTab === 'equipment' && (
-        <ChartErrorBoundary name="Equipment">
+      {state.activeTab === 'threats' && (
+        <ChartErrorBoundary name="Threats & Rhetoric">
+          <ThreatsTab />
+        </ChartErrorBoundary>
+      )}
+
+      {state.activeTab === 'losses' && (
+        <ChartErrorBoundary name="Losses">
           <EquipmentTab />
+        </ChartErrorBoundary>
+      )}
+
+      {state.activeTab === 'economic' && (
+        <ChartErrorBoundary name="Economic Impact">
+          <EconomicTab />
+        </ChartErrorBoundary>
+      )}
+
+      {state.activeTab === 'sabotage' && (
+        <ChartErrorBoundary name="Sabotage & Disinfo">
+          <SabotageTab />
         </ChartErrorBoundary>
       )}
 
@@ -191,23 +197,6 @@ function DashboardContent() {
         <ChartErrorBoundary name="Humanitarian">
           <HumanitarianTab />
         </ChartErrorBoundary>
-      )}
-
-      {state.activeTab === 'territory' && (
-        <>
-          <ChartErrorBoundary name="Territory Control">
-            <TerritoryControlChart dailyAreas={dailyAreas} events={events} />
-          </ChartErrorBoundary>
-          <ChartErrorBoundary name="Monthly Changes">
-            <MonthlyChangesChart dailyAreas={dailyAreas} events={events} />
-          </ChartErrorBoundary>
-          <ChartErrorBoundary name="Rate of Change">
-            <RateOfChangeChart dailyAreas={dailyAreas} events={events} />
-          </ChartErrorBoundary>
-          <ChartErrorBoundary name="Kursk">
-            <KurskChart dailyAreas={dailyAreas} events={events} />
-          </ChartErrorBoundary>
-        </>
       )}
 
       {state.activeTab === 'events' && (
