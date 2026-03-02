@@ -51,13 +51,28 @@ html, body, #root {
 
 .app-header {
   grid-column: 1 / -1;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
+  gap: 16px;
   padding: 0 24px;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--color-border);
   z-index: 10;
+}
+
+.app-header .header-logo {
+  height: 50px;
+  width: auto;
+  transition: opacity 0.2s;
+}
+
+.app-header .header-logo:hover {
+  opacity: 0.8;
+}
+
+.app-header .header-center {
+  text-align: center;
 }
 
 .app-header h1 {
@@ -138,17 +153,6 @@ html, body, #root {
   font-weight: 600;
   margin-bottom: 4px;
   color: var(--text-primary);
-}
-
-.chart-card-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.chart-card-header h2 {
-  margin-bottom: 0;
 }
 
 .chart-card .subtitle {
@@ -443,6 +447,14 @@ html, body, #root {
 .recharts-text {
   fill: var(--text-secondary);
   font-size: 11px;
+}
+
+/* Force all recharts tooltip text to be readable */
+.recharts-tooltip-wrapper .recharts-tooltip-item,
+.recharts-tooltip-wrapper .recharts-tooltip-item-name,
+.recharts-tooltip-wrapper .recharts-tooltip-item-value,
+.recharts-tooltip-wrapper .recharts-tooltip-item-separator {
+  color: #fff !important;
 }
 
 /* Custom tooltip */
@@ -765,6 +777,17 @@ html, body, #root {
 
 .source-card:hover {
   border-color: var(--color-accent);
+}
+
+.source-card.highlighted {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  animation: highlight-pulse 1s ease-in-out 3;
+}
+
+@keyframes highlight-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.5); }
 }
 
 .source-header {
@@ -1379,30 +1402,114 @@ html, body, #root {
   margin-bottom: 20px;
 }
 
-/* ============================================
-   Subtab Navigation
-   ============================================ */
+/* Source link in chart titles */
+.source-link-inline {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: normal;
+  font-size: 14px;
+  margin-left: 4px;
+}
+
+.source-link-inline:hover {
+  text-decoration: underline;
+}
+
+/* Chart header with controls */
+.chart-header-with-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.chart-header-with-controls h3 {
+  margin: 0;
+}
+
+/* Time unit picker */
+.time-unit-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.time-unit-picker label {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.time-unit-picker select {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.time-unit-picker select:hover {
+  border-color: var(--color-accent);
+}
+
+.time-unit-picker select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+/* ========================================
+   Plotly Tooltip Styling
+   ======================================== */
+
+/* Plotly hover labels - dark theme */
+.js-plotly-plot .hoverlayer .hovertext {
+  fill-opacity: 1 !important;
+}
+
+.js-plotly-plot .hoverlayer .hovertext rect {
+  fill: var(--bg-card, #1a1a2e) !important;
+  stroke: var(--color-border, #333) !important;
+  rx: 4px;
+  ry: 4px;
+}
+
+.js-plotly-plot .hoverlayer .hovertext .nums {
+  fill: #fff !important;
+  font-size: 12px !important;
+}
+
+/* ========================================
+   Unified Conflict Events Tab
+   ======================================== */
+
+.unified-conflict-tab {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Subtab Navigation */
 .subtab-nav {
   display: flex;
   gap: 0;
   background: var(--bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  margin-bottom: 20px;
-  overflow: hidden;
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 20px;
+  flex-shrink: 0;
 }
 
 .subtab-btn {
-  flex: 1;
   background: none;
   border: none;
   color: var(--text-secondary);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  padding: 10px 16px;
+  padding: 12px 16px;
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .subtab-btn:hover {
@@ -1413,80 +1520,349 @@ html, body, #root {
 .subtab-btn.active {
   color: var(--color-accent);
   border-bottom-color: var(--color-accent);
-  background: rgba(59, 130, 246, 0.08);
 }
 
-/* New tab containers */
-.threats-tab h2,
-.economic-tab h2,
-.sabotage-tab h2,
-.unified-conflict-tab h2 {
-  font-size: 20px;
+.subtab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* Conflict Layout with Left Sidebar */
+.conflict-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.conflict-layout.with-sidebar {
+  gap: 0;
+}
+
+.conflict-sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--bg-card);
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.conflict-sidebar .sidebar-section {
+  padding: 16px;
+}
+
+.conflict-sidebar .sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.conflict-sidebar .sidebar-header h3 {
+  font-size: 12px;
   font-weight: 600;
-  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin: 0;
 }
 
-.threats-tab .tab-subtitle,
-.economic-tab .tab-subtitle,
-.sabotage-tab .tab-subtitle,
-.unified-conflict-tab .tab-subtitle {
+.conflict-sidebar .sidebar-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.conflict-sidebar .sidebar-actions button {
+  background: none;
+  border: 1px solid var(--color-border);
   color: var(--text-secondary);
-  font-size: 13px;
-  margin-bottom: 16px;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-/* Incident cards (for Infrastructure & Hybrid panels) */
-.incidents-timeline {
+.conflict-sidebar .sidebar-actions button:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.conflict-sidebar .sidebar-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.filter-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px;
 }
 
-.incident-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  transition: border-color 0.2s;
-}
-
-.incident-card:hover {
-  border-color: var(--color-accent);
-}
-
-.incident-header {
+.filter-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.filter-item:hover {
+  background: var(--bg-hover);
+}
+
+.filter-item input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.filter-item .filter-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.filter-item:hover .filter-label {
+  color: var(--text-primary);
+}
+
+.no-filters-msg {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.no-data-msg {
+  font-size: 14px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* Conflict Subtab Base */
+.conflict-subtab {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.conflict-subtab h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
-.incident-date {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-accent);
-  white-space: nowrap;
+/* Conflict Stats Row */
+.conflict-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.incident-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
+/* Event Type Filter Panel */
+.event-filter-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 20px;
 }
 
-.incident-detail {
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.filter-label {
   font-size: 13px;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
-  line-height: 1.5;
-}
-
-.incident-detail strong {
+  font-weight: 600;
   color: var(--text-primary);
-  font-weight: 500;
 }
 
-.incident-notes {
-  font-style: italic;
-  color: var(--text-muted);
+.filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-action-btn {
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-action-btn:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.filter-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Filter Chips */
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-chip {
+  background: var(--bg-primary);
+  border: 1px solid var(--color-border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-chip:hover {
+  border-color: var(--color-accent);
+  color: var(--text-primary);
+}
+
+.filter-chip.selected {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+/* Comparison Tab Controls */
+.comparison-controls {
+  background: var(--bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.dataset-selector,
+.view-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-right: 4px;
+}
+
+.dataset-chip {
+  background: var(--bg-primary);
+  border: 1px solid var(--color-border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dataset-chip:hover {
+  border-color: var(--text-muted);
+}
+
+.dataset-chip.selected {
+  color: #fff;
+}
+
+.view-btn {
+  background: var(--bg-primary);
+  border: 1px solid var(--color-border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-btn:hover {
+  border-color: var(--color-accent);
+}
+
+.view-btn.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+/* Coverage Table in Comparison */
+.coverage-table-container {
+  overflow-x: auto;
+}
+
+.coverage-table-container .coverage-table {
+  min-width: 300px;
+}
+
+.coverage-table-container .coverage-table td:first-child {
+  font-weight: 600;
+}
+
+.js-plotly-plot .hoverlayer .hovertext .name {
+  fill: #fff !important;
+  font-size: 12px !important;
+}
+
+/* Unified hover label styling */
+.js-plotly-plot .hoverlayer .legend text {
+  fill: #fff !important;
+}
+
+/* Plotly modebar styling for dark theme */
+.js-plotly-plot .modebar {
+  background: transparent !important;
+}
+
+.js-plotly-plot .modebar-btn path {
+  fill: var(--text-secondary, #888) !important;
+}
+
+.js-plotly-plot .modebar-btn:hover path {
+  fill: var(--text-primary, #fff) !important;
+}
+
+.js-plotly-plot .modebar-btn.active path {
+  fill: var(--color-accent, #22c55e) !important;
+}
+
+/* Source card highlight animation for deep linking */
+.source-card.source-highlight {
+  animation: source-pulse 0.6s ease-in-out 3;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.4), 0 0 20px rgba(249, 115, 22, 0.3);
+}
+
+@keyframes source-pulse {
+  0%, 100% {
+    border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.4), 0 0 10px rgba(249, 115, 22, 0.2);
+  }
+  50% {
+    border-color: #fb923c;
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.6), 0 0 30px rgba(249, 115, 22, 0.4);
+  }
 }

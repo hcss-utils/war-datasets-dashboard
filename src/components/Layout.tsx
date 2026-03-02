@@ -21,8 +21,24 @@ export default function Layout({ dailyAreas, events, children }: LayoutProps) {
   return (
     <div className={`app-layout ${showSidebar ? '' : 'no-sidebar'}`}>
       <header className="app-header">
-        <h1>Ukraine War Data Dashboard</h1>
-        {showSidebar && <span className="date-display">{startStr} — {endStr}</span>}
+        <a href="https://hcss.nl/rubase/" target="_blank" rel="noopener noreferrer">
+          <img
+            src={import.meta.env.BASE_URL + 'rubase_logo.svg'}
+            alt="RuBase"
+            className="header-logo"
+          />
+        </a>
+        <div className="header-center">
+          <h1>Ukraine War Data Dashboard</h1>
+          {showSidebar && <span className="date-display">{startStr} — {endStr}</span>}
+        </div>
+        <a href="https://hcss.nl/" target="_blank" rel="noopener noreferrer">
+          <img
+            src={import.meta.env.BASE_URL + 'hcss_logo.svg'}
+            alt="HCSS"
+            className="header-logo"
+          />
+        </a>
       </header>
       {showSidebar && (
         <aside className="app-sidebar">
