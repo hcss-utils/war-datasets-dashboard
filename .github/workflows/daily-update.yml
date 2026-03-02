@@ -1,0 +1,72 @@
+name: Daily Data Update
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # 6 AM UTC daily
+  workflow_dispatch:       # manual trigger via GitHub UI
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Python dependencies
+        run: pip install psycopg2-binary
+
+      - name: Check for new data
+        id: check
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          OUTPUT_DIR: public/data
+        run: python scripts/check_new_data.py
+        continue-on-error: true
+
+      - name: Export changed datasets
+        if: steps.check.outcome == 'success'
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          OUTPUT_DIR: public/data
+          CHANGED_KEYS: ${{ steps.check.outputs.changed_keys }}
+        run: python scripts/export_changed.py
+
+      - name: Build dashboard
+        if: steps.check.outcome == 'success'
+        run: npm ci && npm run build
+
+      - name: Commit updated metadata
+        if: steps.check.outcome == 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/data/_export_meta.json
+          git commit -m "chore: update export metadata" || true
+          git push origin main
+
+      - name: Deploy to gh-pages
+        if: steps.check.outcome == 'success'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          commit_message: 'Auto-update: new data detected'
