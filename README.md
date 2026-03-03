@@ -82,6 +82,21 @@ public/data/              # JSON datasets (exported from PostgreSQL)
 
 ## Changelog
 
+### 2026-03-03 — Interactive Legend Toggle (All Charts)
+
+Added click-to-isolate interactivity to all ~20 multi-series charts. Click any legend item to show only that series; click again to restore all. Dual-pane charts (levels + rates) share toggle state.
+
+- New `useSeriesToggle` hook (`src/hooks/useSeriesToggle.ts`) with optional group mapping for paired charts
+- **Conflict Events**: ACLED/UCDP events and fatalities dual-pane charts (4 legends)
+- **Aerial Assaults**: launched/intercepted, drones/missiles, weapon types (4 legends)
+- **Losses**: heavy equipment + rates, strategic air losses (3 legends)
+- **Humanitarian**: casualties + rates, region breakdown, refugee totals (4 legends)
+- **Energy**: pipeline flows, gas supply by source (2 legends)
+- **Military Spending**: 10 country lines (1 legend)
+- **ACLED HDX**: monthly events, regional breakdown (2 legends)
+- **Threat Events**: events + media mentions (1 legend)
+- **Military Events**: metric decomposition T/S/C bars (1 legend)
+
 ### 2026-03-03 — UI/UX Review Fixes
 
 Comprehensive fixes from reviewer audit addressing ~40 issues across all tabs.
