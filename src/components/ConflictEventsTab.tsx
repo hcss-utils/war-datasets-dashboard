@@ -26,7 +26,7 @@ import { loadDailyEvents, loadEventsByType, loadEventsByRegion, loadMonthlyEvent
 import type { DailyEvent, EventByType, EventByRegion, MonthlyEventData } from '../types';
 
 import { PALETTE_20 } from '../utils/colors';
-import { smooth7Day } from '../utils/smoothing';
+import { smoothUcdpBatchSpikes } from '../utils/smoothing';
 import { useSeriesToggle } from '../hooks/useSeriesToggle';
 
 // Calculate Pearson correlation coefficient
@@ -123,7 +123,7 @@ export default function ConflictEventsTab() {
 
   const recentEventsRaw = dailyEvents.slice(-365);
   const recentEvents = smoothUcdp
-    ? smooth7Day(recentEventsRaw, ['ucdp_events', 'ucdp_fatalities'])
+    ? smoothUcdpBatchSpikes(recentEventsRaw, ['ucdp_events', 'ucdp_fatalities'])
     : recentEventsRaw;
 
   // Find last date with real UCDP data (non-zero events)

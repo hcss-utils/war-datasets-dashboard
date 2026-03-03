@@ -6,7 +6,7 @@ import {
 import { loadDailyEvents, loadUcdpByViolenceType, loadUcdpMonthlyByType } from '../../data/newLoader';
 import type { DailyEvent, UcdpByViolenceType, UcdpMonthlyByType } from '../../types';
 import { PALETTE_20 } from '../../utils/colors';
-import { smooth7Day } from '../../utils/smoothing';
+import { smoothUcdpBatchSpikes } from '../../utils/smoothing';
 
 const fmt = (n: number) => n.toLocaleString();
 const VIOLENCE_COLORS: Record<string, string> = {
@@ -98,7 +98,7 @@ export default function UcdpPanel() {
           </button>
         </div>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={smoothPeaks ? smooth7Day(ucdpDays, ['ucdp_events', 'ucdp_fatalities']) : ucdpDays} margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
+          <LineChart data={smoothPeaks ? smoothUcdpBatchSpikes(ucdpDays, ['ucdp_events', 'ucdp_fatalities']) : ucdpDays} margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
             <XAxis dataKey="date" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} angle={-45} textAnchor="end" height={50}
               tickFormatter={(d) => new Date(d).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })} />
