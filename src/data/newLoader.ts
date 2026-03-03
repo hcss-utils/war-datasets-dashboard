@@ -45,6 +45,8 @@ import type {
   LeidenHybridEvent,
   AcledHdxMonthly,
   AcledHdxByRegion,
+  UcdpByViolenceType,
+  UcdpMonthlyByType,
 } from '../types';
 
 const BASE_PATH = import.meta.env.BASE_URL || '/';
@@ -116,3 +118,7 @@ export const loadLeidenHybridEvents = () => fetchJson<LeidenHybridEvent[]>('leid
 // ACLED HDX loaders
 export const loadAcledHdxMonthly = () => fetchJson<AcledHdxMonthly[]>('acled_hdx_monthly.json');
 export const loadAcledHdxByRegion = () => fetchJson<AcledHdxByRegion[]>('acled_hdx_by_region.json');
+
+// UCDP loaders
+export const loadUcdpByViolenceType = () => fetchJson<UcdpByViolenceType[]>('ucdp_by_violence_type.json');
+export const loadUcdpMonthlyByType = () => fetchJson<UcdpMonthlyByType[]>('ucdp_monthly_by_type.json');

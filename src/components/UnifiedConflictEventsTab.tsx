@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { ConflictSubtab } from '../types';
 import SubtabNavigation from './conflict/SubtabNavigation';
+import AcledPanel from './conflict/AcledPanel';
+import UcdpPanel from './conflict/UcdpPanel';
 import ConflictEventsTab from './ConflictEventsTab';
 import ViinaTab from './ViinaTab';
 import BellingcatTab from './BellingcatTab';
@@ -14,8 +16,8 @@ export default function UnifiedConflictEventsTab({ initialSubtab }: { initialSub
       <h2>Conflict Events</h2>
       <p className="tab-subtitle">Multi-source conflict event analysis</p>
       <SubtabNavigation active={subtab} onChange={setSubtab} />
-      {subtab === 'acled' && <ConflictEventsTab />}
-      {subtab === 'ucdp' && <ConflictEventsTab />}
+      {subtab === 'acled' && <AcledPanel />}
+      {subtab === 'ucdp' && <UcdpPanel />}
       {subtab === 'viina' && <ViinaTab />}
       {subtab === 'bellingcat' && <BellingcatTab />}
       {subtab === 'acled-hdx' && <AcledHdxPanel />}

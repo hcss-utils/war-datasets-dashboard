@@ -478,3 +478,19 @@ export interface AcledHdxByRegion {
   civilian_fatalities: number | null;
   demonstration_events: number | null;
 }
+
+// === UCDP Types ===
+export interface UcdpByViolenceType {
+  type_of_violence: number;
+  violence_type_label: string;
+  events: number;
+  fatalities: number;
+}
+
+export interface UcdpMonthlyByType {
+  month: string;
+  type_of_violence: number;
+  violence_type_label: string;
+  events: number;
+  fatalities: number;
+}
