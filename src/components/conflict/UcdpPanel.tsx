@@ -22,6 +22,7 @@ export default function UcdpPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [smoothPeaks, setSmoothPeaks] = useState(false);
+  const [excludeInvasion, setExcludeInvasion] = useState(false);
 
   useEffect(() => {
     Promise.all([loadDailyEvents(), loadUcdpByViolenceType(), loadUcdpMonthlyByType()])
@@ -38,7 +39,13 @@ export default function UcdpPanel() {
   if (error) return <div className="error-container"><h3>Failed to load UCDP data</h3><p>{error}</p></div>;
 
   // Filter to only days with UCDP data
-  const ucdpDays = dailyEvents.filter(d => d.ucdp_events > 0);
+  const INVASION_START = '2022-02-24';
+  const INVASION_END = '2022-03-31';
+  const ucdpDays = dailyEvents.filter(d => {
+    if (d.ucdp_events <= 0) return false;
+    if (excludeInvasion && d.date >= INVASION_START && d.date <= INVASION_END) return false;
+    return true;
+  });
   const totalEvents = violenceTypes.reduce((s, v) => s + v.events, 0);
   const totalFatalities = violenceTypes.reduce((s, v) => s + v.fatalities, 0);
 
@@ -81,21 +88,38 @@ export default function UcdpPanel() {
       <div className="chart-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
           <h3 style={{ margin: 0 }}>Daily UCDP Events & Fatalities</h3>
-          <button
-            onClick={() => setSmoothPeaks(p => !p)}
-            style={{
-              background: smoothPeaks ? '#3b82f6' : 'transparent',
-              color: smoothPeaks ? '#fff' : '#888',
-              border: `1px solid ${smoothPeaks ? '#3b82f6' : '#555'}`,
-              padding: '4px 12px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              transition: 'all 0.2s',
-            }}
-          >
-            {smoothPeaks ? 'Smoothed (7-day avg)' : 'Smooth batch spikes'}
-          </button>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setExcludeInvasion(p => !p)}
+              style={{
+                background: excludeInvasion ? '#f97316' : 'transparent',
+                color: excludeInvasion ? '#fff' : '#888',
+                border: `1px solid ${excludeInvasion ? '#f97316' : '#555'}`,
+                padding: '4px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                transition: 'all 0.2s',
+              }}
+            >
+              {excludeInvasion ? 'Invasion start excluded' : 'Exclude invasion start'}
+            </button>
+            <button
+              onClick={() => setSmoothPeaks(p => !p)}
+              style={{
+                background: smoothPeaks ? '#3b82f6' : 'transparent',
+                color: smoothPeaks ? '#fff' : '#888',
+                border: `1px solid ${smoothPeaks ? '#3b82f6' : '#555'}`,
+                padding: '4px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                transition: 'all 0.2s',
+              }}
+            >
+              {smoothPeaks ? 'Smoothed (7-day avg)' : 'Smooth batch spikes'}
+            </button>
+          </div>
         </div>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={smoothPeaks ? smoothUcdpBatchSpikes(ucdpDays, ['ucdp_events', 'ucdp_fatalities']) : ucdpDays} margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
