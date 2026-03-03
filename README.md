@@ -80,6 +80,66 @@ public/data/              # JSON datasets (exported from PostgreSQL)
 - Leaflet (maps)
 - GitHub Pages (deployment via gh-pages branch)
 
+## Changelog
+
+### 2026-03-03 — UI/UX Review Fixes
+
+Comprehensive fixes from reviewer audit addressing ~40 issues across all tabs.
+
+**Global**
+- Extended color palette from 8 to 20 colors (`src/utils/colors.ts`) — eliminates duplicate colors in all bar/pie charts with >8 categories
+
+**Conflict Events**
+- UCDP lines now end at last real data point instead of dropping to zero (publication lag, not zero events)
+- Added ACLED vs UCDP methodology note (fatality threshold, publication cadence, event scope)
+- Pie chart filters out <1% event types to reduce noise
+- Events rate Y-axis clamped to [-200, 200] to prevent single spikes from squashing all data
+- Added UCDP batch reporting note for fatalities chart
+
+**ACLED HDX**
+- Fixed chart title: "Events by Type" (was "Violence Events & Fatalities" — no fatalities column exists)
+- Fixed X-axis label crowding with `interval="preserveStartEnd"`
+
+**VIINA**
+- Oblast names normalized to Ukrainian: Kyiv (was Kiev), Odesa (was Odessa), Zaporizhzhia (was Zaporizhzhya)
+
+**Aerial Assaults**
+- Intercept rate bars sorted by rate descending (was alphabetical)
+- Bars color-coded by weapon category: ballistic (red), cruise (blue), drone (orange)
+- "Молнія" transliterated to "Molniya (drone)"
+- Added color legend note
+
+**Threats & Rhetoric**
+- GDELT target countries merged: UKRAINE/UKRAINIAN/CRIMEA/KYIV → UKR, RUSSIA/RUSSIAN/PUTIN/MOSCOW → RUS, etc.
+- All three subtab panels (ThreatEvents, Coercive, RedLines) use 20-color palette
+
+**Losses**
+- Split "Cumulative Air Losses" into two charts: "Strategic Air Losses" (Aircraft + Helicopters) and "Drone Losses" — drones at 160K were squashing aircraft/helicopters at ~400
+- Daily tank chart title shows 180-day total
+
+**Economic Impact**
+- Gas chart title: "by Source" (was "by Source Country" — LNG is not a country)
+- Added LNG explanation note and Yamal pipeline status note (near zero since May 2022)
+
+**Aid & Sanctions**
+- Sanctions entity types humanized: "PublicBody" → "Public Body", "LegalEntity" → "Legal Entity"
+- Sanctions pie chart filters <1% entity types
+- Donor bar chart uses 20-color palette
+
+**Sabotage & Disinfo**
+- Cyber: merged "Unknown;Unknown"/"unknown" variants into single "Unknown" entry
+- Infrastructure: added summary stats card (total incidents + date range), incidents grouped by year
+- Hybrid: added "Events may appear in multiple categories" note, year bar labels added
+- All subtab panels use 20-color palette
+
+**Humanitarian**
+- Casualty chart X-axis interval reduced (was showing every month tick)
+- Added prominent OHCHR caveat: verified figures are confirmed minimums
+- Added labels on asylum seekers bars for readability
+
+**Map**
+- Added "Source: DeepState Map" attribution overlay
+
 ## Development
 
 ```bash
