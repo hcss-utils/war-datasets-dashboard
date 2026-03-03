@@ -7,6 +7,7 @@ import { loadGdeltEventsMonthly, loadGdeltEventsByTarget, loadGdeltGoldstein } f
 import type { GdeltEventsMonthly, GdeltEventsByTarget, GdeltGoldstein } from '../../types';
 
 import { PALETTE_20 } from '../../utils/colors';
+import { useSeriesToggle } from '../../hooks/useSeriesToggle';
 
 const MERGE_TARGETS: Record<string, string> = {
   'UKRAINE': 'UKR', 'UKRAINIAN': 'UKR', 'CRIMEA': 'UKR', 'KYIV': 'UKR',
@@ -29,6 +30,8 @@ export default function ThreatEventsPanel() {
       .then(([m, t, g]) => { setMonthly(m); setByTarget(t); setGoldstein(g); setLoading(false); })
       .catch((err) => { setError(err.message); setLoading(false); });
   }, []);
+
+  const threatToggle = useSeriesToggle();
 
   if (loading) return <div className="loading-container"><div className="loading-spinner" /><span className="loading-text">Loading threat events...</span></div>;
   if (error) return <div className="error-container"><h3>Failed to load</h3><p>{error}</p></div>;
@@ -60,9 +63,9 @@ export default function ThreatEventsPanel() {
             <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
               labelFormatter={(d) => new Date(d).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               formatter={(v: number, name: string) => [fmt(v), name]} />
-            <Legend />
-            <Line type="monotone" dataKey="events" name="Threat Events" stroke="#ef4444" dot={false} strokeWidth={2} />
-            <Line type="monotone" dataKey="total_mentions" name="Media Mentions" stroke="#3b82f6" dot={false} strokeWidth={1.5} yAxisId="right" />
+            <Legend onClick={(e: any) => threatToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: threatToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+            <Line type="monotone" dataKey="events" name="Threat Events" stroke="#ef4444" dot={false} strokeWidth={2} hide={!threatToggle.isVisible('events')} />
+            <Line type="monotone" dataKey="total_mentions" name="Media Mentions" stroke="#3b82f6" dot={false} strokeWidth={1.5} yAxisId="right" hide={!threatToggle.isVisible('total_mentions')} />
             <YAxis yAxisId="right" orientation="right" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={fmt} />
           </LineChart>
         </ResponsiveContainer>

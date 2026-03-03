@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 import { loadCasualties, loadRefugeesByCountry, loadRefugeeTotals } from '../data/newLoader';
 import type { CasualtyData, RefugeeByCountry, RefugeeTotals } from '../types';
+import { useSeriesToggle } from '../hooks/useSeriesToggle';
 
 // Format number with thousands separators
 const fmt = (n: number) => n.toLocaleString();
@@ -30,12 +31,20 @@ const TAB20_COLORS = [
   '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5',
 ];
 
+const CASUALTY_GROUPS: Record<string, string> = {
+  killed: 'killed', injured: 'injured',
+  killed_rate: 'killed', injured_rate: 'injured',
+};
+
 export default function HumanitarianTab() {
   const [casualties, setCasualties] = useState<CasualtyData[]>([]);
   const [refugeesByCountry, setRefugeesByCountry] = useState<RefugeeByCountry[]>([]);
   const [refugeeTotals, setRefugeeTotals] = useState<RefugeeTotals[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const casualtyToggle = useSeriesToggle(CASUALTY_GROUPS);
+  const regionToggle = useSeriesToggle();
+  const refugeeToggle = useSeriesToggle();
 
   useEffect(() => {
     Promise.all([loadCasualties(), loadRefugeesByCountry(), loadRefugeeTotals()])
@@ -166,7 +175,7 @@ export default function HumanitarianTab() {
                 }}
                 formatter={(value: number) => fmt(value)}
               />
-              <Legend />
+              <Legend onClick={(e: any) => casualtyToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: casualtyToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
               <Area
                 type="monotone"
                 dataKey="killed"
@@ -174,6 +183,7 @@ export default function HumanitarianTab() {
                 stackId="1"
                 stroke="#ef4444"
                 fill="#ef4444"
+                hide={!casualtyToggle.isVisible('killed')}
               />
               <Area
                 type="monotone"
@@ -182,6 +192,7 @@ export default function HumanitarianTab() {
                 stackId="1"
                 stroke="#f97316"
                 fill="#f97316"
+                hide={!casualtyToggle.isVisible('injured')}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -214,10 +225,10 @@ export default function HumanitarianTab() {
                 }}
                 formatter={(value: number) => `${value.toFixed(1)}%`}
               />
-              <Legend />
+              <Legend onClick={(e: any) => casualtyToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: casualtyToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
               <ReferenceLine y={0} stroke="#888" />
-              <Line type="monotone" dataKey="killed_rate" name="Killed Rate" stroke="#ef4444" dot={false} strokeWidth={1.5} />
-              <Line type="monotone" dataKey="injured_rate" name="Injured Rate" stroke="#f97316" dot={false} strokeWidth={1.5} />
+              <Line type="monotone" dataKey="killed_rate" name="Killed Rate" stroke="#ef4444" dot={false} strokeWidth={1.5} hide={!casualtyToggle.isVisible('killed_rate')} />
+              <Line type="monotone" dataKey="injured_rate" name="Injured Rate" stroke="#f97316" dot={false} strokeWidth={1.5} hide={!casualtyToggle.isVisible('injured_rate')} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -242,11 +253,11 @@ export default function HumanitarianTab() {
                 itemStyle={{ color: '#fff' }}
                 formatter={(value: number) => fmt(value)}
               />
-              <Legend />
-              <Bar dataKey="killed" name="Killed" fill="#ef4444">
+              <Legend onClick={(e: any) => regionToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: regionToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+              <Bar dataKey="killed" name="Killed" fill="#ef4444" hide={!regionToggle.isVisible('killed')}>
                 <LabelList dataKey="killed" position="right" fill="#888" fontSize={9} formatter={(v: number) => fmt(v)} />
               </Bar>
-              <Bar dataKey="injured" name="Injured" fill="#f97316" />
+              <Bar dataKey="injured" name="Injured" fill="#f97316" hide={!regionToggle.isVisible('injured')} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -301,11 +312,11 @@ export default function HumanitarianTab() {
               itemStyle={{ color: '#fff' }}
               formatter={(value: number) => fmt(value)}
             />
-            <Legend />
-            <Bar dataKey="total_refugees" name="Refugees" fill="#3b82f6">
+            <Legend onClick={(e: any) => refugeeToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: refugeeToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+            <Bar dataKey="total_refugees" name="Refugees" fill="#3b82f6" hide={!refugeeToggle.isVisible('total_refugees')}>
               <LabelList dataKey="total_refugees" position="top" fill="#888" fontSize={9} formatter={(v: number) => `${(v / 1000000).toFixed(1)}M`} />
             </Bar>
-            <Bar dataKey="total_asylum_seekers" name="Asylum Seekers" fill="#8b5cf6">
+            <Bar dataKey="total_asylum_seekers" name="Asylum Seekers" fill="#8b5cf6" hide={!refugeeToggle.isVisible('total_asylum_seekers')}>
               <LabelList dataKey="total_asylum_seekers" position="top" fill="#888" fontSize={9} formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''} />
             </Bar>
           </BarChart>

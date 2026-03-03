@@ -19,6 +19,7 @@ import {
 import { loadDailyAerialThreats, loadWeaponTypes } from '../data/newLoader';
 import type { DailyAerialThreat, WeaponTypeSummary } from '../types';
 import { CorrelationInfo, DualPaneInfo } from './InfoModal';
+import { useSeriesToggle } from '../hooks/useSeriesToggle';
 
 // Format number with thousands separators
 const fmt = (n: number) => n.toLocaleString();
@@ -58,11 +59,19 @@ function pearsonCorrelation(x: number[], y: number[]): number {
   return denominator === 0 ? 0 : numerator / denominator;
 }
 
+const THREAT_GROUPS: Record<string, string> = {
+  avg_launched: 'launched', avg_destroyed: 'intercepted',
+  launched_rate: 'launched', destroyed_rate: 'intercepted',
+};
+
 export default function AerialAssaultsTab() {
   const [dailyThreats, setDailyThreats] = useState<DailyAerialThreat[]>([]);
   const [weaponTypes, setWeaponTypes] = useState<WeaponTypeSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const threatToggle = useSeriesToggle(THREAT_GROUPS);
+  const droneToggle = useSeriesToggle();
+  const weaponToggle = useSeriesToggle();
 
   useEffect(() => {
     Promise.all([loadDailyAerialThreats(), loadWeaponTypes()])
@@ -206,9 +215,9 @@ export default function AerialAssaultsTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number, name: string) => [fmt(value), name]}
               />
-              <Legend />
-              <Line type="monotone" dataKey="avg_launched" name="Launched (7d avg)" stroke="#ef4444" dot={false} strokeWidth={1.5} />
-              <Line type="monotone" dataKey="avg_destroyed" name="Intercepted (7d avg)" stroke="#22c55e" dot={false} strokeWidth={1.5} />
+              <Legend onClick={(e: any) => threatToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: threatToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+              <Line type="monotone" dataKey="avg_launched" name="Launched (7d avg)" stroke="#ef4444" dot={false} strokeWidth={1.5} hide={!threatToggle.isVisible('avg_launched')} />
+              <Line type="monotone" dataKey="avg_destroyed" name="Intercepted (7d avg)" stroke="#22c55e" dot={false} strokeWidth={1.5} hide={!threatToggle.isVisible('avg_destroyed')} />
             </LineChart>
           </ResponsiveContainer>
           <ResponsiveContainer width="100%" height={200}>
@@ -230,10 +239,10 @@ export default function AerialAssaultsTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]}
               />
-              <Legend />
+              <Legend onClick={(e: any) => threatToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: threatToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
               <ReferenceLine y={0} stroke="#888" />
-              <Line type="monotone" dataKey="launched_rate" name="Launched Rate" stroke="#ef4444" dot={false} strokeWidth={1.5} />
-              <Line type="monotone" dataKey="destroyed_rate" name="Intercepted Rate" stroke="#22c55e" dot={false} strokeWidth={1.5} />
+              <Line type="monotone" dataKey="launched_rate" name="Launched Rate" stroke="#ef4444" dot={false} strokeWidth={1.5} hide={!threatToggle.isVisible('launched_rate')} />
+              <Line type="monotone" dataKey="destroyed_rate" name="Intercepted Rate" stroke="#22c55e" dot={false} strokeWidth={1.5} hide={!threatToggle.isVisible('destroyed_rate')} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -261,7 +270,7 @@ export default function AerialAssaultsTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number) => fmt(value)}
               />
-              <Legend />
+              <Legend onClick={(e: any) => droneToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: droneToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
               <Area
                 type="monotone"
                 dataKey="drones_launched"
@@ -269,6 +278,7 @@ export default function AerialAssaultsTab() {
                 stackId="1"
                 stroke="#f97316"
                 fill="#f97316"
+                hide={!droneToggle.isVisible('drones_launched')}
               />
               <Area
                 type="monotone"
@@ -277,6 +287,7 @@ export default function AerialAssaultsTab() {
                 stackId="1"
                 stroke="#3b82f6"
                 fill="#3b82f6"
+                hide={!droneToggle.isVisible('missiles_launched')}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -341,11 +352,11 @@ export default function AerialAssaultsTab() {
                 name === 'total_launched' ? 'Launched' : name === 'total_destroyed' ? 'Intercepted' : name,
               ]}
             />
-            <Legend />
-            <Bar dataKey="total_launched" name="Launched" fill="#ef4444">
+            <Legend onClick={(e: any) => weaponToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: weaponToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+            <Bar dataKey="total_launched" name="Launched" fill="#ef4444" hide={!weaponToggle.isVisible('total_launched')}>
               <LabelList dataKey="total_launched" position="right" fill="#888" fontSize={9} formatter={(v: number) => fmt(v)} />
             </Bar>
-            <Bar dataKey="total_destroyed" name="Intercepted" fill="#22c55e" />
+            <Bar dataKey="total_destroyed" name="Intercepted" fill="#22c55e" hide={!weaponToggle.isVisible('total_destroyed')} />
           </BarChart>
         </ResponsiveContainer>
       </div>

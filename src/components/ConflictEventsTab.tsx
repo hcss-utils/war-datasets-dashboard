@@ -26,6 +26,7 @@ import { loadDailyEvents, loadEventsByType, loadEventsByRegion, loadMonthlyEvent
 import type { DailyEvent, EventByType, EventByRegion, MonthlyEventData } from '../types';
 
 import { PALETTE_20 } from '../utils/colors';
+import { useSeriesToggle } from '../hooks/useSeriesToggle';
 
 // Calculate Pearson correlation coefficient
 function pearsonCorrelation(x: number[], y: number[]): number {
@@ -44,6 +45,15 @@ function pearsonCorrelation(x: number[], y: number[]): number {
   return denominator === 0 ? 0 : numerator / denominator;
 }
 
+const EVENTS_GROUPS: Record<string, string> = {
+  acled_events: 'acled', ucdp_events: 'ucdp',
+  acled_rate: 'acled', ucdp_rate: 'ucdp',
+};
+const FATALITIES_GROUPS: Record<string, string> = {
+  acled_fatalities: 'acled', ucdp_fatalities: 'ucdp',
+  acled_rate: 'acled', ucdp_rate: 'ucdp',
+};
+
 export default function ConflictEventsTab() {
   const [dailyEvents, setDailyEvents] = useState<DailyEvent[]>([]);
   const [eventsByType, setEventsByType] = useState<EventByType[]>([]);
@@ -51,6 +61,8 @@ export default function ConflictEventsTab() {
   const [monthlyEvents, setMonthlyEvents] = useState<MonthlyEventData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const eventsToggle = useSeriesToggle(EVENTS_GROUPS);
+  const fatalitiesToggle = useSeriesToggle(FATALITIES_GROUPS);
 
   // Toggle visibility: click to show only that type, click again to show all
   const handleLegendClick = (dataKey: string) => {
@@ -230,9 +242,9 @@ export default function ConflictEventsTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number, name: string) => [fmt(value), name]}
               />
-              <Legend />
-              <Line type="monotone" dataKey="acled_events" name="ACLED Events" stroke="#ef4444" dot={false} strokeWidth={1.5} />
-              <Line type="monotone" dataKey="ucdp_events" name="UCDP Events" stroke="#3b82f6" dot={false} strokeWidth={1.5} connectNulls={false} />
+              <Legend onClick={(e: any) => eventsToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: eventsToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+              <Line type="monotone" dataKey="acled_events" name="ACLED Events" stroke="#ef4444" dot={false} strokeWidth={1.5} hide={!eventsToggle.isVisible('acled_events')} />
+              <Line type="monotone" dataKey="ucdp_events" name="UCDP Events" stroke="#3b82f6" dot={false} strokeWidth={1.5} connectNulls={false} hide={!eventsToggle.isVisible('ucdp_events')} />
             </LineChart>
           </ResponsiveContainer>
           <ResponsiveContainer width="100%" height={200}>
@@ -253,10 +265,10 @@ export default function ConflictEventsTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]}
               />
-              <Legend />
+              <Legend onClick={(e: any) => eventsToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: eventsToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
               <ReferenceLine y={0} stroke="#888" />
-              <Line type="monotone" dataKey="acled_rate" name="ACLED Rate" stroke="#ef4444" dot={false} strokeWidth={1.5} />
-              <Line type="monotone" dataKey="ucdp_rate" name="UCDP Rate" stroke="#3b82f6" dot={false} strokeWidth={1.5} connectNulls={false} />
+              <Line type="monotone" dataKey="acled_rate" name="ACLED Rate" stroke="#ef4444" dot={false} strokeWidth={1.5} hide={!eventsToggle.isVisible('acled_rate')} />
+              <Line type="monotone" dataKey="ucdp_rate" name="UCDP Rate" stroke="#3b82f6" dot={false} strokeWidth={1.5} connectNulls={false} hide={!eventsToggle.isVisible('ucdp_rate')} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -402,9 +414,9 @@ export default function ConflictEventsTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number, name: string) => [fmt(value), name]}
               />
-              <Legend />
-              <Line type="monotone" dataKey="acled_fatalities" name="ACLED Fatalities" stroke="#dc2626" dot={false} strokeWidth={1.5} />
-              <Line type="monotone" dataKey="ucdp_fatalities" name="UCDP Fatalities" stroke="#2563eb" dot={false} strokeWidth={1.5} connectNulls={false} />
+              <Legend onClick={(e: any) => fatalitiesToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: fatalitiesToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+              <Line type="monotone" dataKey="acled_fatalities" name="ACLED Fatalities" stroke="#dc2626" dot={false} strokeWidth={1.5} hide={!fatalitiesToggle.isVisible('acled_fatalities')} />
+              <Line type="monotone" dataKey="ucdp_fatalities" name="UCDP Fatalities" stroke="#2563eb" dot={false} strokeWidth={1.5} connectNulls={false} hide={!fatalitiesToggle.isVisible('ucdp_fatalities')} />
             </LineChart>
           </ResponsiveContainer>
           <ResponsiveContainer width="100%" height={200}>
@@ -425,10 +437,10 @@ export default function ConflictEventsTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]}
               />
-              <Legend />
+              <Legend onClick={(e: any) => fatalitiesToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: fatalitiesToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
               <ReferenceLine y={0} stroke="#888" />
-              <Line type="monotone" dataKey="acled_rate" name="ACLED Rate" stroke="#dc2626" dot={false} strokeWidth={1.5} />
-              <Line type="monotone" dataKey="ucdp_rate" name="UCDP Rate" stroke="#2563eb" dot={false} strokeWidth={1.5} connectNulls={false} />
+              <Line type="monotone" dataKey="acled_rate" name="ACLED Rate" stroke="#dc2626" dot={false} strokeWidth={1.5} hide={!fatalitiesToggle.isVisible('acled_rate')} />
+              <Line type="monotone" dataKey="ucdp_rate" name="UCDP Rate" stroke="#2563eb" dot={false} strokeWidth={1.5} connectNulls={false} hide={!fatalitiesToggle.isVisible('ucdp_rate')} />
             </LineChart>
           </ResponsiveContainer>
         </div>

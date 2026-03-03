@@ -4,6 +4,7 @@ import {
 } from 'recharts';
 import { loadSipriExpenditure } from '../../data/newLoader';
 import type { SipriExpenditure } from '../../types';
+import { useSeriesToggle } from '../../hooks/useSeriesToggle';
 
 const COUNTRY_COLORS: Record<string, string> = {
   'Russia': '#ef4444',
@@ -30,6 +31,8 @@ export default function MilitarySpendingPanel() {
       .then((d) => { setData(d); setLoading(false); })
       .catch((err) => { setError(err.message); setLoading(false); });
   }, []);
+
+  const countryToggle = useSeriesToggle();
 
   if (loading) return <div className="loading-container"><div className="loading-spinner" /><span className="loading-text">Loading military spending...</span></div>;
   if (error) return <div className="error-container"><h3>Failed to load</h3><p>{error}</p></div>;
@@ -58,11 +61,12 @@ export default function MilitarySpendingPanel() {
               tickFormatter={(v) => `$${(v / 1e3).toFixed(0)}B`} />
             <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
               formatter={(v: number, name: string) => [`$${(v / 1e3).toFixed(1)}B`, name]} />
-            <Legend />
+            <Legend onClick={(e: any) => countryToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: countryToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
             {countries.map(c => (
               <Line key={c} type="monotone" dataKey={c} name={c}
                 stroke={COUNTRY_COLORS[c] || '#888'} dot={false}
-                strokeWidth={c === 'Russia' || c === 'Ukraine' ? 2.5 : 1.5} />
+                strokeWidth={c === 'Russia' || c === 'Ukraine' ? 2.5 : 1.5}
+                hide={!countryToggle.isVisible(c)} />
             ))}
           </LineChart>
         </ResponsiveContainer>

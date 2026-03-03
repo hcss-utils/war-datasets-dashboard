@@ -17,6 +17,7 @@ import {
 import { loadEquipmentDaily, loadPersonnelDaily } from '../data/newLoader';
 import type { EquipmentDaily, PersonnelDaily } from '../types';
 import { DualPaneInfo, RateOfChangeInfo } from './InfoModal';
+import { useSeriesToggle } from '../hooks/useSeriesToggle';
 
 // Format number with thousands separators
 const fmt = (n: number) => n.toLocaleString();
@@ -34,11 +35,18 @@ const EQUIPMENT_COLORS: Record<string, string> = {
   naval_ship: '#0ea5e9',
 };
 
+const EQUIP_GROUPS: Record<string, string> = {
+  tank: 'tank', apc: 'apc', field_artillery: 'artillery',
+  tank_rate: 'tank', apc_rate: 'apc', artillery_rate: 'artillery',
+};
+
 export default function EquipmentTab() {
   const [equipment, setEquipment] = useState<EquipmentDaily[]>([]);
   const [personnel, setPersonnel] = useState<PersonnelDaily[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const equipToggle = useSeriesToggle(EQUIP_GROUPS);
+  const airToggle = useSeriesToggle();
 
   useEffect(() => {
     Promise.all([loadEquipmentDaily(), loadPersonnelDaily()])
@@ -236,10 +244,10 @@ export default function EquipmentTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number) => fmt(value)}
               />
-              <Legend />
-              <Line type="monotone" dataKey="tank" name="Tanks" stroke={EQUIPMENT_COLORS.tank} dot={false} />
-              <Line type="monotone" dataKey="apc" name="APCs" stroke={EQUIPMENT_COLORS.apc} dot={false} />
-              <Line type="monotone" dataKey="field_artillery" name="Artillery" stroke={EQUIPMENT_COLORS.field_artillery} dot={false} />
+              <Legend onClick={(e: any) => equipToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: equipToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+              <Line type="monotone" dataKey="tank" name="Tanks" stroke={EQUIPMENT_COLORS.tank} dot={false} hide={!equipToggle.isVisible('tank')} />
+              <Line type="monotone" dataKey="apc" name="APCs" stroke={EQUIPMENT_COLORS.apc} dot={false} hide={!equipToggle.isVisible('apc')} />
+              <Line type="monotone" dataKey="field_artillery" name="Artillery" stroke={EQUIPMENT_COLORS.field_artillery} dot={false} hide={!equipToggle.isVisible('field_artillery')} />
             </LineChart>
           </ResponsiveContainer>
           <ResponsiveContainer width="100%" height={200}>
@@ -261,11 +269,11 @@ export default function EquipmentTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number) => `${value.toFixed(2)}%`}
               />
-              <Legend />
+              <Legend onClick={(e: any) => equipToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: equipToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
               <ReferenceLine y={0} stroke="#888" />
-              <Line type="monotone" dataKey="tank_rate" name="Tanks Rate" stroke={EQUIPMENT_COLORS.tank} dot={false} />
-              <Line type="monotone" dataKey="apc_rate" name="APCs Rate" stroke={EQUIPMENT_COLORS.apc} dot={false} />
-              <Line type="monotone" dataKey="artillery_rate" name="Artillery Rate" stroke={EQUIPMENT_COLORS.field_artillery} dot={false} />
+              <Line type="monotone" dataKey="tank_rate" name="Tanks Rate" stroke={EQUIPMENT_COLORS.tank} dot={false} hide={!equipToggle.isVisible('tank_rate')} />
+              <Line type="monotone" dataKey="apc_rate" name="APCs Rate" stroke={EQUIPMENT_COLORS.apc} dot={false} hide={!equipToggle.isVisible('apc_rate')} />
+              <Line type="monotone" dataKey="artillery_rate" name="Artillery Rate" stroke={EQUIPMENT_COLORS.field_artillery} dot={false} hide={!equipToggle.isVisible('artillery_rate')} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -293,9 +301,9 @@ export default function EquipmentTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number) => fmt(value)}
               />
-              <Legend />
-              <Line type="monotone" dataKey="aircraft" name="Aircraft" stroke={EQUIPMENT_COLORS.aircraft} dot={false} />
-              <Line type="monotone" dataKey="helicopter" name="Helicopters" stroke={EQUIPMENT_COLORS.helicopter} dot={false} />
+              <Legend onClick={(e: any) => airToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: airToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+              <Line type="monotone" dataKey="aircraft" name="Aircraft" stroke={EQUIPMENT_COLORS.aircraft} dot={false} hide={!airToggle.isVisible('aircraft')} />
+              <Line type="monotone" dataKey="helicopter" name="Helicopters" stroke={EQUIPMENT_COLORS.helicopter} dot={false} hide={!airToggle.isVisible('helicopter')} />
             </LineChart>
           </ResponsiveContainer>
         </div>

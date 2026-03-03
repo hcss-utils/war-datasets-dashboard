@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { useDashboard } from '../../context/DashboardContext';
 import { ImpactScoresInfo } from '../InfoModal';
+import { useSeriesToggle } from '../../hooks/useSeriesToggle';
 import type { MilitaryEvent } from '../../types';
 
 interface Props {
@@ -33,6 +34,7 @@ function DecompTooltip({ active, payload, label }: { active?: boolean; payload?:
 
 export default function MetricDecomposition({ events }: Props) {
   const { state } = useDashboard();
+  const metricToggle = useSeriesToggle();
 
   const chartData = useMemo(() => {
     const startStr = state.dateRange[0].toISOString().substring(0, 10);
@@ -78,10 +80,12 @@ export default function MetricDecomposition({ events }: Props) {
           <Tooltip content={<DecompTooltip />} />
           <Legend
             wrapperStyle={{ fontSize: 11, color: 'var(--text-secondary)' }}
+            onClick={(e: any) => metricToggle.toggle(e.dataKey)}
+            formatter={(value: string, entry: any) => (<span style={{ color: metricToggle.isVisible(entry.dataKey) ? 'var(--text-secondary)' : '#444', cursor: 'pointer' }}>{value}</span>)}
           />
-          <Bar dataKey="Territorial" stackId="a" fill="var(--color-territorial)" isAnimationActive={false} />
-          <Bar dataKey="Strategic" stackId="a" fill="var(--color-strategic)" isAnimationActive={false} />
-          <Bar dataKey="Cascade" stackId="a" fill="var(--color-cascade)" isAnimationActive={false} />
+          <Bar dataKey="Territorial" stackId="a" fill="var(--color-territorial)" isAnimationActive={false} hide={!metricToggle.isVisible('Territorial')} />
+          <Bar dataKey="Strategic" stackId="a" fill="var(--color-strategic)" isAnimationActive={false} hide={!metricToggle.isVisible('Strategic')} />
+          <Bar dataKey="Cascade" stackId="a" fill="var(--color-cascade)" isAnimationActive={false} hide={!metricToggle.isVisible('Cascade')} />
         </BarChart>
       </ResponsiveContainer>
     </div>

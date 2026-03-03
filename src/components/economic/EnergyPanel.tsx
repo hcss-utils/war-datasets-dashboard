@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { loadEnergyGasFlows, loadEnergyFossilRevenue } from '../../data/newLoader';
 import type { EnergyGasFlow, EnergyFossilRevenue } from '../../types';
+import { useSeriesToggle } from '../../hooks/useSeriesToggle';
 
 const fmt = (n: number) => n.toLocaleString();
 
@@ -19,6 +20,9 @@ export default function EnergyPanel() {
       .then(([g, f]) => { setGasFlows(g); setFossil(f); setLoading(false); })
       .catch((err) => { setError(err.message); setLoading(false); });
   }, []);
+
+  const pipelineToggle = useSeriesToggle();
+  const supplyToggle = useSeriesToggle();
 
   if (loading) return <div className="loading-container"><div className="loading-spinner" /><span className="loading-text">Loading energy data...</span></div>;
   if (error) return <div className="error-container"><h3>Failed to load</h3><p>{error}</p></div>;
@@ -49,11 +53,11 @@ export default function EnergyPanel() {
             <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
               labelFormatter={(d) => new Date(d).toLocaleDateString()}
               formatter={(v: number, name: string) => [v != null ? v.toFixed(1) : 'N/A', name]} />
-            <Legend />
-            <Area type="monotone" dataKey="nord_stream" name="Nord Stream" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.7} />
-            <Area type="monotone" dataKey="ukraine_gas_transit" name="Ukraine Transit" stackId="1" stroke="#eab308" fill="#eab308" fillOpacity={0.7} />
-            <Area type="monotone" dataKey="turkstream" name="TurkStream" stackId="1" stroke="#ef4444" fill="#ef4444" fillOpacity={0.7} />
-            <Area type="monotone" dataKey="yamal_by_pl" name="Yamal" stackId="1" stroke="#22c55e" fill="#22c55e" fillOpacity={0.7} />
+            <Legend onClick={(e: any) => pipelineToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: pipelineToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+            <Area type="monotone" dataKey="nord_stream" name="Nord Stream" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.7} hide={!pipelineToggle.isVisible('nord_stream')} />
+            <Area type="monotone" dataKey="ukraine_gas_transit" name="Ukraine Transit" stackId="1" stroke="#eab308" fill="#eab308" fillOpacity={0.7} hide={!pipelineToggle.isVisible('ukraine_gas_transit')} />
+            <Area type="monotone" dataKey="turkstream" name="TurkStream" stackId="1" stroke="#ef4444" fill="#ef4444" fillOpacity={0.7} hide={!pipelineToggle.isVisible('turkstream')} />
+            <Area type="monotone" dataKey="yamal_by_pl" name="Yamal" stackId="1" stroke="#22c55e" fill="#22c55e" fillOpacity={0.7} hide={!pipelineToggle.isVisible('yamal_by_pl')} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -69,12 +73,12 @@ export default function EnergyPanel() {
             <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
               labelFormatter={(d) => new Date(d).toLocaleDateString()}
               formatter={(v: number, name: string) => [v != null ? v.toFixed(1) : 'N/A', name]} />
-            <Legend />
-            <Line type="monotone" dataKey="russia" name="Russia" stroke="#ef4444" dot={false} strokeWidth={2} />
-            <Line type="monotone" dataKey="norway" name="Norway" stroke="#3b82f6" dot={false} strokeWidth={1.5} />
-            <Line type="monotone" dataKey="lng" name="LNG" stroke="#22c55e" dot={false} strokeWidth={1.5} />
-            <Line type="monotone" dataKey="algeria" name="Algeria" stroke="#f97316" dot={false} strokeWidth={1} />
-            <Line type="monotone" dataKey="azerbaijan" name="Azerbaijan" stroke="#8b5cf6" dot={false} strokeWidth={1} />
+            <Legend onClick={(e: any) => supplyToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: supplyToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+            <Line type="monotone" dataKey="russia" name="Russia" stroke="#ef4444" dot={false} strokeWidth={2} hide={!supplyToggle.isVisible('russia')} />
+            <Line type="monotone" dataKey="norway" name="Norway" stroke="#3b82f6" dot={false} strokeWidth={1.5} hide={!supplyToggle.isVisible('norway')} />
+            <Line type="monotone" dataKey="lng" name="LNG" stroke="#22c55e" dot={false} strokeWidth={1.5} hide={!supplyToggle.isVisible('lng')} />
+            <Line type="monotone" dataKey="algeria" name="Algeria" stroke="#f97316" dot={false} strokeWidth={1} hide={!supplyToggle.isVisible('algeria')} />
+            <Line type="monotone" dataKey="azerbaijan" name="Azerbaijan" stroke="#8b5cf6" dot={false} strokeWidth={1} hide={!supplyToggle.isVisible('azerbaijan')} />
           </LineChart>
         </ResponsiveContainer>
         <p className="chart-note">LNG = Liquefied Natural Gas imports (various origins including US, Qatar, Norway). Yamal pipeline flows near zero since May 2022 (reverse flow via Poland).</p>
