@@ -31,15 +31,15 @@
     "count": 71
   },
   "gdelt_events": {
-    "count": 293543,
-    "max_date": "2026-02-28"
+    "count": 343063,
+    "max_date": "2026-03-02"
   },
   "gdelt_coercive": {
-    "count": 360914,
+    "count": 361110,
     "max_date": "2026-03-01"
   },
   "gdelt_redlines": {
-    "count": 8784,
+    "count": 8800,
     "max_date": "2026-03-01"
   },
   "gas_flows": {
