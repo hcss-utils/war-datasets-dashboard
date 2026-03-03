@@ -24,10 +24,17 @@ export default function CyberPanel() {
   if (loading) return <div className="loading-container"><div className="loading-spinner" /><span className="loading-text">Loading cyber incidents...</span></div>;
   if (error) return <div className="error-container"><h3>Failed to load</h3><p>{error}</p></div>;
 
-  // Merge Unknown variants before taking top 15
+  // Merge duplicated entries: "China;China" → "China", "Unknown;Unknown" → "Unknown", etc.
   const mergedCountries: Record<string, number> = {};
   byCountry.forEach(c => {
-    const key = c.country?.toLowerCase().replace(/;/g, '').trim() === 'unknown' ? 'Unknown' : c.country;
+    let key = c.country ?? 'Unknown';
+    // Handle "X;X" duplicate pattern (e.g. "Russia;Russia" → "Russia")
+    const parts = key.split(';').map(p => p.trim());
+    if (parts.length === 2 && parts[0].toLowerCase() === parts[1].toLowerCase()) {
+      key = parts[0];
+    }
+    // Normalize unknown variants
+    if (key.toLowerCase() === 'unknown') key = 'Unknown';
     mergedCountries[key] = (mergedCountries[key] || 0) + c.incidents;
   });
   const topCountries = Object.entries(mergedCountries)

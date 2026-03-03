@@ -119,8 +119,11 @@ export default function HumanitarianTab() {
     .sort((a, b) => (b.killed + b.injured) - (a.killed + a.injured))
     .slice(0, 15);
 
+  // Filter refugee totals to war-era (2022+) — pre-war figures are negligible
+  const warEraRefugees = refugeeTotals.filter(r => r.year >= 2022);
+
   // Latest refugee totals
-  const latestRefugees = refugeeTotals[refugeeTotals.length - 1];
+  const latestRefugees = warEraRefugees[warEraRefugees.length - 1];
 
   // Top destination countries (latest year)
   const latestYear = Math.max(...refugeesByCountry.map((r) => r.year));
@@ -297,9 +300,9 @@ export default function HumanitarianTab() {
       </div>
 
       <div className="chart-card">
-        <h3>Refugee Totals by Year</h3>
+        <h3>Refugee Totals by Year (since 2022)</h3>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={refugeeTotals}>
+          <BarChart data={warEraRefugees}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
             <XAxis dataKey="year" stroke="#888" tick={{ fill: '#888', fontSize: 11 }} />
             <YAxis

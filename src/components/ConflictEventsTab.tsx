@@ -278,18 +278,28 @@ export default function ConflictEventsTab() {
       <div className="chart-grid-2">
         <div className="chart-card">
           <h3>Events by Type (ACLED)</h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={350}>
             <PieChart>
               <Pie
                 data={pieDataWithPct}
-                cx="40%"
+                cx="50%"
                 cy="50%"
-                outerRadius={90}
-                innerRadius={50}
+                outerRadius={100}
+                innerRadius={55}
                 dataKey="value"
                 paddingAngle={2}
-                label={({ pct }) => `${pct}%`}
-                labelLine={false}
+                label={({ name, pct, cx: pieCx, cy: pieCy, midAngle, outerRadius: oR }) => {
+                  const RADIAN = Math.PI / 180;
+                  const radius = (oR as number) + 20;
+                  const x = (pieCx as number) + radius * Math.cos(-midAngle * RADIAN);
+                  const y = (pieCy as number) + radius * Math.sin(-midAngle * RADIAN);
+                  return (
+                    <text x={x} y={y} fill="#ccc" fontSize={10} textAnchor={x > (pieCx as number) ? 'start' : 'end'} dominantBaseline="central">
+                      {`${name} ${pct}%`}
+                    </text>
+                  );
+                }}
+                labelLine={{ stroke: '#666', strokeWidth: 1 }}
               >
                 {pieDataWithPct.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={PALETTE_20[index % PALETTE_20.length]} />
@@ -299,16 +309,6 @@ export default function ConflictEventsTab() {
                 contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
                 itemStyle={{ color: '#fff' }}
                 formatter={(value: number, name: string) => [fmt(value), name]}
-              />
-              <Legend
-                layout="vertical"
-                align="right"
-                verticalAlign="middle"
-                formatter={(value: string) => {
-                  const item = pieDataWithPct.find(d => d.name === value);
-                  return `${value} (${item?.pct || 0}%)`;
-                }}
-                wrapperStyle={{ fontSize: 11, paddingLeft: 10 }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -346,8 +346,8 @@ export default function ConflictEventsTab() {
       <div className="chart-card">
         <h3>Monthly Events by Type <span className="chart-source">(ACLED)</span></h3>
         <p className="chart-note">Click a legend item to show only that category; click again to show all</p>
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={monthlyChartData}>
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart data={monthlyChartData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
             <XAxis
               dataKey="month"
@@ -355,8 +355,8 @@ export default function ConflictEventsTab() {
               tick={{ fill: '#888', fontSize: 10 }}
               angle={-45}
               textAnchor="end"
-              height={60}
-              interval={0}
+              height={70}
+              interval={Math.max(1, Math.floor(monthlyChartData.length / 15))}
               tickFormatter={(d) => new Date(d).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}
             />
             <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 11 }} tickFormatter={(v) => fmt(v)} />

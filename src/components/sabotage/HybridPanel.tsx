@@ -36,8 +36,8 @@ export default function HybridPanel() {
   const yearCount: Record<number, number> = {};
   data.forEach(d => { yearCount[d.incident_year] = (yearCount[d.incident_year] || 0) + 1; });
   const byYear = Object.entries(yearCount)
-    .map(([year, count]) => ({ year: Number(year), count }))
-    .sort((a, b) => a.year - b.year);
+    .map(([year, count]) => ({ year: String(year), count }))
+    .sort((a, b) => a.year.localeCompare(b.year));
 
   return (
     <div>
@@ -66,7 +66,7 @@ export default function HybridPanel() {
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={byYear}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="year" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} />
+              <XAxis dataKey="year" type="category" stroke="#888" tick={{ fill: '#888', fontSize: 11 }} />
               <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 10 }} />
               <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }} formatter={(v: number) => fmt(v)} />
               <Bar dataKey="count" name="Events" fill="#8b5cf6">

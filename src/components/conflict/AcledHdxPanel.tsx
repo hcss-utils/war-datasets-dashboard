@@ -28,10 +28,18 @@ export default function AcledHdxPanel() {
   if (loading) return <div className="loading-container"><div className="loading-spinner" /><span className="loading-text">Loading ACLED HDX data...</span></div>;
   if (error) return <div className="error-container"><h3>Failed to load</h3><p>{error}</p></div>;
 
+  // Convert text month names to month numbers
+  const MONTH_MAP: Record<string, string> = {
+    'January': '01', 'February': '02', 'March': '03', 'April': '04',
+    'May': '05', 'June': '06', 'July': '07', 'August': '08',
+    'September': '09', 'October': '10', 'November': '11', 'December': '12',
+  };
+
   // Aggregate monthly by data_type across all regions
   const monthlyByType: Record<string, Record<string, number>> = {};
   monthly.forEach(r => {
-    const key = `${r.year}-${String(r.month).padStart(2, '0')}`;
+    const mm = MONTH_MAP[r.month] || '01';
+    const key = `${r.year}-${mm}`;
     if (!monthlyByType[key]) monthlyByType[key] = { violence: 0, civilian: 0, demonstrations: 0 };
     monthlyByType[key][r.data_type] += r.events;
   });
@@ -51,7 +59,11 @@ export default function AcledHdxPanel() {
         <ResponsiveContainer width="100%" height={350}>
           <LineChart data={monthlyChart} margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-            <XAxis dataKey="month" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} angle={-45} textAnchor="end" height={50} interval="preserveStartEnd" />
+            <XAxis dataKey="month" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} angle={-45} textAnchor="end" height={50} interval={Math.max(1, Math.floor(monthlyChart.length / 12))}
+              tickFormatter={(d) => {
+                const [y, m] = d.split('-');
+                return new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+              }} />
             <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={fmt} />
             <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
               formatter={(v: number, name: string) => [fmt(v), name]} />
