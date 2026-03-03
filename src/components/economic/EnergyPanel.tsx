@@ -59,7 +59,7 @@ export default function EnergyPanel() {
       </div>
 
       <div className="chart-card">
-        <h3>EU Total Gas Supply by Source Country</h3>
+        <h3>EU Total Gas Supply by Source</h3>
         <ResponsiveContainer width="100%" height={350}>
           <LineChart data={gasFlows} margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -77,6 +77,7 @@ export default function EnergyPanel() {
             <Line type="monotone" dataKey="azerbaijan" name="Azerbaijan" stroke="#8b5cf6" dot={false} strokeWidth={1} />
           </LineChart>
         </ResponsiveContainer>
+        <p className="chart-note">LNG = Liquefied Natural Gas imports (various origins including US, Qatar, Norway). Yamal pipeline flows near zero since May 2022 (reverse flow via Poland).</p>
       </div>
 
       <div className="chart-card">

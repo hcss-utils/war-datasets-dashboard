@@ -273,7 +273,7 @@ export default function EquipmentTab() {
 
       <div className="chart-grid-2">
         <div className="chart-card">
-          <h3>Cumulative Air Losses <span className="chart-source">(Ukraine MOD)</span></h3>
+          <h3>Strategic Air Losses <span className="chart-source">(Ukraine MOD)</span></h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={equipment}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -296,13 +296,40 @@ export default function EquipmentTab() {
               <Legend />
               <Line type="monotone" dataKey="aircraft" name="Aircraft" stroke={EQUIPMENT_COLORS.aircraft} dot={false} />
               <Line type="monotone" dataKey="helicopter" name="Helicopters" stroke={EQUIPMENT_COLORS.helicopter} dot={false} />
-              <Line type="monotone" dataKey="drone" name="Drones" stroke={EQUIPMENT_COLORS.drone} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         <div className="chart-card">
-          <h3>Daily Tank Losses (Last 180 Days) <span className="chart-source">(Ukraine MOD)</span></h3>
+          <h3>Drone Losses <span className="chart-source">(Ukraine MOD)</span></h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={equipment}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis
+                dataKey="date"
+                stroke="#888"
+                tick={{ fill: '#888', fontSize: 10 }}
+                angle={-45}
+                textAnchor="end"
+                height={60}
+                tickFormatter={(d) => new Date(d).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}
+              />
+              <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 11 }} tickFormatter={(v) => fmt(v)} />
+              <Tooltip
+                contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
+                itemStyle={{ color: '#fff' }}
+                labelFormatter={(d) => new Date(d).toLocaleDateString()}
+                formatter={(value: number) => fmt(value)}
+              />
+              <Line type="monotone" dataKey="drone" name="Drones" stroke={EQUIPMENT_COLORS.drone} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="chart-grid-2">
+        <div className="chart-card">
+          <h3>Daily Tank Losses (Last 180 Days) — Total: {fmt(dailyLosses.slice(-180).reduce((s, d) => s + d.tank, 0))} <span className="chart-source">(Ukraine MOD)</span></h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={dailyLosses.slice(-180)}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />

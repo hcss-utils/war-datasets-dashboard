@@ -6,7 +6,7 @@ import {
 import { loadGdeltCoerciveMonthly, loadGdeltCoerciveSources } from '../../data/newLoader';
 import type { GdeltCoerciveMonthly, GdeltCoerciveSource } from '../../types';
 
-const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
+import { PALETTE_20 } from '../../utils/colors';
 const fmt = (n: number) => n.toLocaleString();
 
 export default function CoercivePanel() {
@@ -56,7 +56,7 @@ export default function CoercivePanel() {
             <YAxis dataKey="source" type="category" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} width={140} />
             <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }} formatter={(v: number) => fmt(v)} />
             <Bar dataKey="count" name="Records">
-              {topSources.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+              {topSources.map((_, i) => <Cell key={i} fill={PALETTE_20[i % PALETTE_20.length]} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>

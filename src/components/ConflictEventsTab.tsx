@@ -25,15 +25,7 @@ const fmt = (n: number) => n.toLocaleString();
 import { loadDailyEvents, loadEventsByType, loadEventsByRegion, loadMonthlyEvents } from '../data/newLoader';
 import type { DailyEvent, EventByType, EventByRegion, MonthlyEventData } from '../types';
 
-const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
-
-// Tab20 color palette for distinctive bar colors
-const TAB20_COLORS = [
-  '#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
-  '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5',
-  '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
-  '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5',
-];
+import { PALETTE_20 } from '../utils/colors';
 
 // Calculate Pearson correlation coefficient
 function pearsonCorrelation(x: number[], y: number[]): number {
@@ -117,15 +109,24 @@ export default function ConflictEventsTab() {
 
   const recentEvents = dailyEvents.slice(-365);
 
+  // Find last date with real UCDP data (non-zero events)
+  let lastUcdpIdx = -1;
+  for (let i = recentEvents.length - 1; i >= 0; i--) {
+    if (recentEvents[i].ucdp_events > 0) { lastUcdpIdx = i; break; }
+  }
+  const ucdpCutoffDate = lastUcdpIdx >= 0 ? recentEvents[lastUcdpIdx].date : null;
+
   // Rate of change for both ACLED and UCDP (7-day rolling change rate)
   const dualRateData = recentEvents.slice(7).map((d, i) => {
     const acledCurrent = d.acled_events;
     const acledPrev = recentEvents[i].acled_events;
     const acledRate = acledPrev > 0 ? ((acledCurrent - acledPrev) / acledPrev) * 100 : 0;
 
-    const ucdpCurrent = d.ucdp_events;
+    // Null out UCDP data after last real observation
+    const afterCutoff = ucdpCutoffDate && d.date > ucdpCutoffDate;
+    const ucdpCurrent = afterCutoff ? null : d.ucdp_events;
     const ucdpPrev = recentEvents[i].ucdp_events;
-    const ucdpRate = ucdpPrev > 0 ? ((ucdpCurrent - ucdpPrev) / ucdpPrev) * 100 : 0;
+    const ucdpRate = afterCutoff ? null : (ucdpPrev > 0 ? ((d.ucdp_events - ucdpPrev) / ucdpPrev) * 100 : 0);
 
     return {
       date: d.date,
@@ -136,12 +137,14 @@ export default function ConflictEventsTab() {
     };
   });
 
-  // Pie chart data with percentages
+  // Pie chart data with percentages (exclude <1% categories)
   const pieTotal = pieData.reduce((s, d) => s + d.value, 0);
-  const pieDataWithPct = pieData.map(d => ({
-    ...d,
-    pct: ((d.value / pieTotal) * 100).toFixed(0),
-  }));
+  const pieDataWithPct = pieData
+    .map(d => ({
+      ...d,
+      pct: ((d.value / pieTotal) * 100).toFixed(0),
+    }))
+    .filter(d => parseFloat(d.pct) >= 1);
 
   // Rate of change for fatalities (7-day rolling)
   const fatalitiesRateData = recentEvents.slice(7).map((d, i) => {
@@ -149,9 +152,10 @@ export default function ConflictEventsTab() {
     const acledPrev = recentEvents[i].acled_fatalities;
     const acledRate = acledPrev > 0 ? ((acledCurrent - acledPrev) / acledPrev) * 100 : 0;
 
-    const ucdpCurrent = d.ucdp_fatalities;
+    const afterCutoff = ucdpCutoffDate && d.date > ucdpCutoffDate;
+    const ucdpCurrent = afterCutoff ? null : d.ucdp_fatalities;
     const ucdpPrev = recentEvents[i].ucdp_fatalities;
-    const ucdpRate = ucdpPrev > 0 ? ((ucdpCurrent - ucdpPrev) / ucdpPrev) * 100 : 0;
+    const ucdpRate = afterCutoff ? null : (ucdpPrev > 0 ? ((d.ucdp_fatalities - ucdpPrev) / ucdpPrev) * 100 : 0);
 
     return {
       date: d.date,
@@ -181,23 +185,26 @@ export default function ConflictEventsTab() {
     recentEvents.map(d => d.acled_events),
     recentEvents.map(d => d.ucdp_events)
   );
+  const dualRateFiltered = dualRateData.filter(d => d.ucdp_rate != null);
   const eventsRateCorr = pearsonCorrelation(
-    dualRateData.map(d => d.acled_rate),
-    dualRateData.map(d => d.ucdp_rate)
+    dualRateFiltered.map(d => d.acled_rate),
+    dualRateFiltered.map(d => d.ucdp_rate as number)
   );
   const fatalitiesCorr = pearsonCorrelation(
     recentEvents.map(d => d.acled_fatalities),
     recentEvents.map(d => d.ucdp_fatalities)
   );
+  const fatRateFiltered = fatalitiesRateData.filter(d => d.ucdp_rate != null);
   const fatalitiesRateCorr = pearsonCorrelation(
-    fatalitiesRateData.map(d => d.acled_rate),
-    fatalitiesRateData.map(d => d.ucdp_rate)
+    fatRateFiltered.map(d => d.acled_rate),
+    fatRateFiltered.map(d => d.ucdp_rate as number)
   );
 
   return (
     <div className="conflict-events-tab">
       <h2>Conflict Events Analysis</h2>
       <p className="tab-subtitle">Data from ACLED and UCDP conflict event databases</p>
+      <p className="chart-note">ACLED includes non-fatal events and publishes weekly. UCDP requires at least one fatal casualty, publishes in confirmed batches, and covers different event type scopes.</p>
 
       <div className="chart-card">
         <h3>Daily Event Count (ACLED vs UCDP) <DualPaneInfo /></h3>
@@ -225,7 +232,7 @@ export default function ConflictEventsTab() {
               />
               <Legend />
               <Line type="monotone" dataKey="acled_events" name="ACLED Events" stroke="#ef4444" dot={false} strokeWidth={1.5} />
-              <Line type="monotone" dataKey="ucdp_events" name="UCDP Events" stroke="#3b82f6" dot={false} strokeWidth={1.5} />
+              <Line type="monotone" dataKey="ucdp_events" name="UCDP Events" stroke="#3b82f6" dot={false} strokeWidth={1.5} connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
           <ResponsiveContainer width="100%" height={200}>
@@ -240,7 +247,7 @@ export default function ConflictEventsTab() {
                 height={50}
                 tickFormatter={(d) => new Date(d).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}
               />
-              <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => `${v.toFixed(0)}%`} />
+              <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 10 }} domain={[-200, 200]} allowDataOverflow={true} tickFormatter={(v) => `${v.toFixed(0)}%`} />
               <Tooltip
                 contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
@@ -249,10 +256,11 @@ export default function ConflictEventsTab() {
               <Legend />
               <ReferenceLine y={0} stroke="#888" />
               <Line type="monotone" dataKey="acled_rate" name="ACLED Rate" stroke="#ef4444" dot={false} strokeWidth={1.5} />
-              <Line type="monotone" dataKey="ucdp_rate" name="UCDP Rate" stroke="#3b82f6" dot={false} strokeWidth={1.5} />
+              <Line type="monotone" dataKey="ucdp_rate" name="UCDP Rate" stroke="#3b82f6" dot={false} strokeWidth={1.5} connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
+        <p className="chart-note">UCDP data ends ~Dec 2024 — later dates reflect publication lag, not zero events.</p>
       </div>
 
       <div className="chart-grid-2">
@@ -272,7 +280,7 @@ export default function ConflictEventsTab() {
                 labelLine={false}
               >
                 {pieDataWithPct.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={PALETTE_20[index % PALETTE_20.length]} />
                 ))}
               </Pie>
               <Tooltip
@@ -314,7 +322,7 @@ export default function ConflictEventsTab() {
               />
               <Bar dataKey="events" name="Events">
                 {topRegions.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={TAB20_COLORS[index % TAB20_COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={PALETTE_20[index % PALETTE_20.length]} />
                 ))}
                 <LabelList dataKey="events" position="right" fill="#888" fontSize={10} formatter={(v: number) => fmt(v)} />
               </Bar>
@@ -362,7 +370,7 @@ export default function ConflictEventsTab() {
                 key={type}
                 dataKey={type}
                 stackId="a"
-                fill={COLORS[i % COLORS.length]}
+                fill={PALETTE_20[i % PALETTE_20.length]}
                 hide={selectedType !== null && selectedType !== type}
               />
             ))}
@@ -396,7 +404,7 @@ export default function ConflictEventsTab() {
               />
               <Legend />
               <Line type="monotone" dataKey="acled_fatalities" name="ACLED Fatalities" stroke="#dc2626" dot={false} strokeWidth={1.5} />
-              <Line type="monotone" dataKey="ucdp_fatalities" name="UCDP Fatalities" stroke="#2563eb" dot={false} strokeWidth={1.5} />
+              <Line type="monotone" dataKey="ucdp_fatalities" name="UCDP Fatalities" stroke="#2563eb" dot={false} strokeWidth={1.5} connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
           <ResponsiveContainer width="100%" height={200}>
@@ -420,10 +428,11 @@ export default function ConflictEventsTab() {
               <Legend />
               <ReferenceLine y={0} stroke="#888" />
               <Line type="monotone" dataKey="acled_rate" name="ACLED Rate" stroke="#dc2626" dot={false} strokeWidth={1.5} />
-              <Line type="monotone" dataKey="ucdp_rate" name="UCDP Rate" stroke="#2563eb" dot={false} strokeWidth={1.5} />
+              <Line type="monotone" dataKey="ucdp_rate" name="UCDP Rate" stroke="#2563eb" dot={false} strokeWidth={1.5} connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
+        <p className="chart-note">UCDP reports fatalities in monthly batches, which may create artificial start-of-month spikes. UCDP data ends ~Dec 2024.</p>
       </div>
     </div>
   );

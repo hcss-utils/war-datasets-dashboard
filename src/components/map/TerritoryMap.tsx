@@ -103,6 +103,7 @@ export default function TerritoryMap({ dailyAreas, availableDates }: Props) {
           )}
         </MapContainer>
         <MapLegend currentDate={currentDate} loading={loading} />
+        <div style={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.6)', color: '#ccc', padding: '2px 8px', borderRadius: 4, fontSize: 11, zIndex: 1000 }}>Source: DeepState Map</div>
       </div>
       <div className="map-controls">
         <TimeSlider

@@ -32,14 +32,14 @@ import type {
 
 const fmt = (n: number) => n.toLocaleString();
 
-const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
+import { PALETTE_20 } from '../utils/colors';
 
-const TAB20_COLORS = [
-  '#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
-  '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5',
-  '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
-  '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5',
-];
+const OBLAST_RENAME: Record<string, string> = {
+  'Kiev City': 'Kyiv City',
+  'Kiev': 'Kyiv Oblast',
+  'Odessa': 'Odesa',
+  'Zaporizhzhya': 'Zaporizhzhia',
+};
 
 // Source name mapping for better labels
 const SOURCE_LABELS: Record<string, string> = {
@@ -126,8 +126,11 @@ export default function ViinaTab() {
 
   const sources = [...new Set(bySource.map(s => SOURCE_LABELS[s.source] || s.source))];
 
-  // Top 10 oblasts
-  const topOblasts = byOblast.slice(0, 10).sort((a, b) => a.oblast.localeCompare(b.oblast));
+  // Top 10 oblasts (with normalized names)
+  const topOblasts = byOblast.slice(0, 10).map(o => ({
+    ...o,
+    oblast: OBLAST_RENAME[o.oblast] || o.oblast,
+  })).sort((a, b) => a.oblast.localeCompare(b.oblast));
 
   // Pie data for sources
   const sourceTotal = bySource.reduce((s, d) => s + d.events, 0);
@@ -190,7 +193,7 @@ export default function ViinaTab() {
                 labelLine={false}
               >
                 {pieData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={PALETTE_20[index % PALETTE_20.length]} />
                 ))}
               </Pie>
               <Tooltip
@@ -230,7 +233,7 @@ export default function ViinaTab() {
               />
               <Bar dataKey="events" name="Events">
                 {topOblasts.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={TAB20_COLORS[index % TAB20_COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={PALETTE_20[index % PALETTE_20.length]} />
                 ))}
                 <LabelList dataKey="events" position="right" fill="#888" fontSize={10} formatter={(v: number) => fmt(v)} />
               </Bar>
@@ -277,7 +280,7 @@ export default function ViinaTab() {
                 key={source}
                 dataKey={source}
                 stackId="a"
-                fill={TAB20_COLORS[i % TAB20_COLORS.length]}
+                fill={PALETTE_20[i % PALETTE_20.length]}
                 hide={selectedSource !== null && selectedSource !== source}
               />
             ))}

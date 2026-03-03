@@ -144,6 +144,10 @@ export default function HumanitarianTab() {
         </div>
       </div>
 
+      <p className="chart-note" style={{ background: 'rgba(239,68,68,0.1)', padding: '8px 12px', borderRadius: 4, border: '1px solid rgba(239,68,68,0.3)' }}>
+        OHCHR verified figures represent confirmed minimums. Actual civilian casualties are likely considerably higher. Data may not reflect latest OHCHR monthly updates.
+      </p>
+
       <div className="chart-card">
         <h3>Monthly Civilian Casualties (OHCHR)</h3>
         <p className="chart-note">Top: Monthly counts | Bottom: Month-over-month rate of change (%)</p>
@@ -191,7 +195,7 @@ export default function HumanitarianTab() {
                 angle={-45}
                 textAnchor="end"
                 height={50}
-                interval={0}
+                interval={2}
                 tickFormatter={(d) => {
                   const [y, m] = d.split('-');
                   const year = parseInt(y);
@@ -301,7 +305,9 @@ export default function HumanitarianTab() {
             <Bar dataKey="total_refugees" name="Refugees" fill="#3b82f6">
               <LabelList dataKey="total_refugees" position="top" fill="#888" fontSize={9} formatter={(v: number) => `${(v / 1000000).toFixed(1)}M`} />
             </Bar>
-            <Bar dataKey="total_asylum_seekers" name="Asylum Seekers" fill="#8b5cf6" />
+            <Bar dataKey="total_asylum_seekers" name="Asylum Seekers" fill="#8b5cf6">
+              <LabelList dataKey="total_asylum_seekers" position="top" fill="#888" fontSize={9} formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''} />
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>

@@ -6,7 +6,15 @@ import {
 import { loadGdeltEventsMonthly, loadGdeltEventsByTarget, loadGdeltGoldstein } from '../../data/newLoader';
 import type { GdeltEventsMonthly, GdeltEventsByTarget, GdeltGoldstein } from '../../types';
 
-const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
+import { PALETTE_20 } from '../../utils/colors';
+
+const MERGE_TARGETS: Record<string, string> = {
+  'UKRAINE': 'UKR', 'UKRAINIAN': 'UKR', 'CRIMEA': 'UKR', 'KYIV': 'UKR',
+  'RUSSIA': 'RUS', 'RUSSIAN': 'RUS', 'VLADIMIR PUTIN': 'RUS', 'MOSCOW': 'RUS',
+  'EUROPE': 'EUR', 'EUROPEAN': 'EUR',
+  'UNITED STATES': 'USA', 'AMERICAN': 'USA',
+  'NORTH ATLANTIC': 'NATO',
+};
 const fmt = (n: number) => n.toLocaleString();
 
 export default function ThreatEventsPanel() {
@@ -25,7 +33,16 @@ export default function ThreatEventsPanel() {
   if (loading) return <div className="loading-container"><div className="loading-spinner" /><span className="loading-text">Loading threat events...</span></div>;
   if (error) return <div className="error-container"><h3>Failed to load</h3><p>{error}</p></div>;
 
-  const topTargets = byTarget.slice(0, 15);
+  // Merge duplicate country variants before taking top 15
+  const mergedTargets: Record<string, number> = {};
+  byTarget.forEach(t => {
+    const key = MERGE_TARGETS[t.country?.toUpperCase()] || t.country;
+    mergedTargets[key] = (mergedTargets[key] || 0) + t.events;
+  });
+  const topTargets = Object.entries(mergedTargets)
+    .map(([country, events]) => ({ country, events }))
+    .sort((a, b) => b.events - a.events)
+    .slice(0, 15);
 
   return (
     <div>
@@ -61,7 +78,7 @@ export default function ThreatEventsPanel() {
               <YAxis dataKey="country" type="category" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} width={60} />
               <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }} formatter={(v: number) => fmt(v)} />
               <Bar dataKey="events" name="Threat Events">
-                {topTargets.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                {topTargets.map((_, i) => <Cell key={i} fill={PALETTE_20[i % PALETTE_20.length]} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>

@@ -6,7 +6,7 @@ import {
 import { loadDisinfoMonthly, loadDisinfoByLanguage } from '../../data/newLoader';
 import type { DisinfoMonthly, DisinfoByLanguage } from '../../types';
 
-const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
+import { PALETTE_20 } from '../../utils/colors';
 const fmt = (n: number) => n.toLocaleString();
 
 export default function DisinfoPanel() {
@@ -56,7 +56,7 @@ export default function DisinfoPanel() {
             <YAxis dataKey="language" type="category" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} width={90} />
             <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }} formatter={(v: number) => fmt(v)} />
             <Bar dataKey="count" name="Articles">
-              {topLanguages.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+              {topLanguages.map((_, i) => <Cell key={i} fill={PALETTE_20[i % PALETTE_20.length]} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>

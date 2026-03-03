@@ -23,13 +23,21 @@ import { CorrelationInfo, DualPaneInfo } from './InfoModal';
 // Format number with thousands separators
 const fmt = (n: number) => n.toLocaleString();
 
-// Tab20 color palette for distinctive bar colors
-const TAB20_COLORS = [
-  '#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
-  '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5',
-  '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
-  '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5',
-];
+const WEAPON_CATEGORY: Record<string, string> = {
+  'Shahed-136/131': 'drone', 'Shahed/other drones': 'drone',
+  'Iskander-M': 'ballistic', 'Iskander-K': 'cruise',
+  'X-101/X-555': 'cruise', 'Kalibr': 'cruise',
+  'Kinzhal': 'ballistic', 'X-22/X-32': 'cruise',
+  'X-59/X-69': 'cruise', 'Zircon': 'ballistic',
+  'S-300/S-400': 'ballistic', 'KN-23/KN-24': 'ballistic',
+};
+const CATEGORY_COLORS: Record<string, string> = {
+  ballistic: '#ef4444', cruise: '#3b82f6', drone: '#f97316', other: '#888888',
+};
+
+const WEAPON_DISPLAY: Record<string, string> = {
+  '\u041C\u043E\u043B\u043D\u0456\u044F': 'Molniya (drone)',
+};
 
 // Calculate Pearson correlation coefficient
 function pearsonCorrelation(x: number[], y: number[]): number {
@@ -114,11 +122,16 @@ export default function AerialAssaultsTab() {
     };
   });
 
-  // Top weapons by launch count
-  const topWeapons = weaponTypes.filter((w) => w.total_launched > 50).slice(0, 15);
+  // Top weapons by launch count (with display name mapping)
+  const topWeapons = weaponTypes
+    .filter((w) => w.total_launched > 50)
+    .slice(0, 15)
+    .map(w => ({ ...w, model: WEAPON_DISPLAY[w.model] || w.model }));
 
-  // Weapons sorted alphabetically for intercept rate chart
-  const weaponsSortedAlpha = [...topWeapons].sort((a, b) => a.model.localeCompare(b.model));
+  // Weapons sorted by intercept rate (descending) for intercept rate chart
+  const weaponsSortedByRate = [...topWeapons]
+    .map(w => ({ ...w, model: WEAPON_DISPLAY[w.model] || w.model }))
+    .sort((a, b) => b.intercept_rate - a.intercept_rate);
 
   // Calculate totals
   const totalLaunched = dailyThreats.reduce((s, d) => s + d.total_launched, 0);
@@ -335,8 +348,9 @@ export default function AerialAssaultsTab() {
 
       <div className="chart-card">
         <h3>Intercept Rate by Weapon Type <span className="chart-source">(Ukraine Air Force)</span></h3>
+        <p className="chart-note">Color: <span style={{color:'#ef4444'}}>Ballistic</span> | <span style={{color:'#3b82f6'}}>Cruise</span> | <span style={{color:'#f97316'}}>Drone</span> | <span style={{color:'#888'}}>Other</span></p>
         <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={weaponsSortedAlpha} layout="vertical" margin={{ right: 50 }}>
+          <BarChart data={weaponsSortedByRate} layout="vertical" margin={{ right: 50 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
             <XAxis
               type="number"
@@ -358,8 +372,8 @@ export default function AerialAssaultsTab() {
               formatter={(value: number) => `${value.toFixed(1)}%`}
             />
             <Bar dataKey="intercept_rate" name="Intercept Rate">
-              {weaponsSortedAlpha.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={TAB20_COLORS[index % TAB20_COLORS.length]} />
+              {weaponsSortedByRate.map((w, index) => (
+                <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[WEAPON_CATEGORY[w.model] || 'other']} />
               ))}
               <LabelList dataKey="intercept_rate" position="right" fill="#888" fontSize={9} formatter={(v: number) => `${v.toFixed(0)}%`} />
             </Bar>

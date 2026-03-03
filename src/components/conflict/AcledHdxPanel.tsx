@@ -47,7 +47,7 @@ export default function AcledHdxPanel() {
         <ResponsiveContainer width="100%" height={350}>
           <LineChart data={monthlyChart} margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-            <XAxis dataKey="month" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} angle={-45} textAnchor="end" height={50} />
+            <XAxis dataKey="month" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} angle={-45} textAnchor="end" height={50} interval="preserveStartEnd" />
             <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={fmt} />
             <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
               formatter={(v: number, name: string) => [fmt(v), name]} />
@@ -60,7 +60,7 @@ export default function AcledHdxPanel() {
       </div>
 
       <div className="chart-card">
-        <h3>Top 15 Regions — Violence Events &amp; Fatalities</h3>
+        <h3>Top 15 Regions — Events by Type</h3>
         <ResponsiveContainer width="100%" height={450}>
           <BarChart data={topRegions} layout="vertical" margin={{ left: 150, right: 40 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />

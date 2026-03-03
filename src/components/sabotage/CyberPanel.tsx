@@ -6,7 +6,7 @@ import {
 import { loadCyberIncidentsTimeline, loadCyberIncidentsByCountry } from '../../data/newLoader';
 import type { CyberIncidentTimeline, CyberIncidentByCountry } from '../../types';
 
-const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
+import { PALETTE_20 } from '../../utils/colors';
 const fmt = (n: number) => n.toLocaleString();
 
 export default function CyberPanel() {
@@ -24,7 +24,16 @@ export default function CyberPanel() {
   if (loading) return <div className="loading-container"><div className="loading-spinner" /><span className="loading-text">Loading cyber incidents...</span></div>;
   if (error) return <div className="error-container"><h3>Failed to load</h3><p>{error}</p></div>;
 
-  const topCountries = byCountry.slice(0, 15);
+  // Merge Unknown variants before taking top 15
+  const mergedCountries: Record<string, number> = {};
+  byCountry.forEach(c => {
+    const key = c.country?.toLowerCase().replace(/;/g, '').trim() === 'unknown' ? 'Unknown' : c.country;
+    mergedCountries[key] = (mergedCountries[key] || 0) + c.incidents;
+  });
+  const topCountries = Object.entries(mergedCountries)
+    .map(([country, incidents]) => ({ country, incidents }))
+    .sort((a, b) => b.incidents - a.incidents)
+    .slice(0, 15);
 
   return (
     <div>
@@ -56,7 +65,7 @@ export default function CyberPanel() {
             <YAxis dataKey="country" type="category" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} width={110} />
             <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }} formatter={(v: number) => fmt(v)} />
             <Bar dataKey="incidents" name="Incidents">
-              {topCountries.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+              {topCountries.map((_, i) => <Cell key={i} fill={PALETTE_20[i % PALETTE_20.length]} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>

@@ -6,7 +6,13 @@ import {
 import { loadKielAidByDonor, loadKielAidTimeline, loadSanctionsEuSummary, loadSanctionsEuTimeline } from '../../data/newLoader';
 import type { KielAidByDonor, KielAidTimeline, SanctionsEuSummary, SanctionsEuTimeline } from '../../types';
 
-const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e'];
+import { PALETTE_20 } from '../../utils/colors';
+
+const ENTITY_LABELS: Record<string, string> = {
+  'Person': 'Person', 'Organization': 'Organization',
+  'LegalEntity': 'Legal Entity', 'Company': 'Company',
+  'PublicBody': 'Public Body', 'Vessel': 'Vessel',
+};
 const fmt = (n: number) => n.toLocaleString();
 
 export default function AidSanctionsPanel() {
@@ -60,10 +66,13 @@ export default function AidSanctionsPanel() {
     });
 
   const sanctionsTotal = sanctionsSummary.reduce((s, r) => s + r.count, 0);
-  const sanctionsPie = sanctionsSummary.map(r => ({
-    name: r.schema_type, value: r.count,
-    pct: ((r.count / sanctionsTotal) * 100).toFixed(0),
-  }));
+  const sanctionsPie = sanctionsSummary
+    .map(r => ({
+      name: ENTITY_LABELS[r.schema_type] || r.schema_type,
+      value: r.count,
+      pct: ((r.count / sanctionsTotal) * 100).toFixed(0),
+    }))
+    .filter(r => parseFloat(r.pct) >= 1);
 
   return (
     <div>
@@ -81,7 +90,7 @@ export default function AidSanctionsPanel() {
             <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
               formatter={(v: number) => [`${(v / 1e6).toFixed(0)}M EUR`, 'Total']} />
             <Bar dataKey="total_eur" name="Aid (EUR)">
-              {topDonors.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+              {topDonors.map((_, i) => <Cell key={i} fill={PALETTE_20[i % PALETTE_20.length]} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -111,7 +120,7 @@ export default function AidSanctionsPanel() {
             <PieChart>
               <Pie data={sanctionsPie} cx="40%" cy="50%" outerRadius={90} innerRadius={50} dataKey="value" paddingAngle={2}
                 label={({ pct }) => `${pct}%`} labelLine={false}>
-                {sanctionsPie.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                {sanctionsPie.map((_, i) => <Cell key={i} fill={PALETTE_20[i % PALETTE_20.length]} />)}
               </Pie>
               <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
                 formatter={(v: number, name: string) => [fmt(v), name]} />

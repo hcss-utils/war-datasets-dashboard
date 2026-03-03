@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList,
 } from 'recharts';
 import { loadLeidenHybridEvents } from '../../data/newLoader';
 import type { LeidenHybridEvent } from '../../types';
-
-const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
+import { PALETTE_20 } from '../../utils/colors';
 const fmt = (n: number) => n.toLocaleString();
 
 export default function HybridPanel() {
@@ -48,6 +47,7 @@ export default function HybridPanel() {
       <div className="chart-grid-2">
         <div className="chart-card">
           <h3>Events by Category</h3>
+          <p className="chart-note">Events may appear in multiple categories.</p>
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={byCategory} layout="vertical" margin={{ left: 150, right: 40 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -55,7 +55,7 @@ export default function HybridPanel() {
               <YAxis dataKey="category" type="category" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} width={140} />
               <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }} formatter={(v: number) => fmt(v)} />
               <Bar dataKey="count" name="Events">
-                {byCategory.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                {byCategory.map((_, i) => <Cell key={i} fill={PALETTE_20[i % PALETTE_20.length]} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -69,7 +69,9 @@ export default function HybridPanel() {
               <XAxis dataKey="year" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} />
               <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 10 }} />
               <Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }} formatter={(v: number) => fmt(v)} />
-              <Bar dataKey="count" name="Events" fill="#8b5cf6" />
+              <Bar dataKey="count" name="Events" fill="#8b5cf6">
+                <LabelList dataKey="count" position="top" fill="#888" fontSize={10} />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
