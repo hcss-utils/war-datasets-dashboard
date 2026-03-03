@@ -26,10 +26,15 @@ const fmt = (n: number) => n.toLocaleString();
 const WEAPON_CATEGORY: Record<string, string> = {
   'Shahed-136/131': 'drone', 'Shahed/other drones': 'drone',
   'Iskander-M': 'ballistic', 'Iskander-K': 'cruise',
-  'X-101/X-555': 'cruise', 'Kalibr': 'cruise',
+  'X-101/X-555': 'cruise', 'Kalibr': 'cruise', 'Kalibr (cruise)': 'cruise',
   'Kinzhal': 'ballistic', 'X-22/X-32': 'cruise',
-  'X-59/X-69': 'cruise', 'Zircon': 'ballistic',
+  'X-59/X-69': 'cruise', 'X-59': 'cruise', 'Zircon': 'ballistic',
   'S-300/S-400': 'ballistic', 'KN-23/KN-24': 'ballistic',
+  'C-300': 'ballistic', 'Iskander-M/KN-23': 'ballistic',
+  'Lancet': 'drone', 'Orlan-10': 'drone', 'ZALA': 'drone',
+  'Reconnaissance UAV': 'drone', 'Unknown UAV': 'drone',
+  'X-101/X-555 and Kalibr': 'cruise',
+  '\u041C\u043E\u043B\u043D\u0456\u044F': 'drone',
 };
 const CATEGORY_COLORS: Record<string, string> = {
   ballistic: '#ef4444', cruise: '#3b82f6', drone: '#f97316', other: '#888888',
@@ -122,15 +127,14 @@ export default function AerialAssaultsTab() {
     };
   });
 
-  // Top weapons by launch count (with display name mapping)
+  // Top weapons by launch count (with display name mapping, preserving original for category lookup)
   const topWeapons = weaponTypes
     .filter((w) => w.total_launched > 50)
     .slice(0, 15)
-    .map(w => ({ ...w, model: WEAPON_DISPLAY[w.model] || w.model }));
+    .map(w => ({ ...w, originalModel: w.model, model: WEAPON_DISPLAY[w.model] || w.model }));
 
   // Weapons sorted by intercept rate (descending) for intercept rate chart
   const weaponsSortedByRate = [...topWeapons]
-    .map(w => ({ ...w, model: WEAPON_DISPLAY[w.model] || w.model }))
     .sort((a, b) => b.intercept_rate - a.intercept_rate);
 
   // Calculate totals
@@ -373,7 +377,7 @@ export default function AerialAssaultsTab() {
             />
             <Bar dataKey="intercept_rate" name="Intercept Rate">
               {weaponsSortedByRate.map((w, index) => (
-                <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[WEAPON_CATEGORY[w.model] || 'other']} />
+                <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[WEAPON_CATEGORY[w.originalModel] || 'other']} />
               ))}
               <LabelList dataKey="intercept_rate" position="right" fill="#888" fontSize={9} formatter={(v: number) => `${v.toFixed(0)}%`} />
             </Bar>
