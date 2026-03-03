@@ -1,0 +1,68 @@
+{
+  "acled": {
+    "count": 224197,
+    "max_date": "2025-03-01T00:00:00"
+  },
+  "ucdp": {
+    "count": 31547,
+    "max_date": "2024-12-31"
+  },
+  "viina": {
+    "count": 557452,
+    "max_date": "2026-02-28"
+  },
+  "bellingcat": {
+    "count": 2514,
+    "max_date": "2025-07-09"
+  },
+  "missiles": {
+    "count": 3442,
+    "max_date": "2026-02-22"
+  },
+  "equipment": {
+    "count": 1464,
+    "max_date": "2026-02-27"
+  },
+  "personnel": {
+    "count": 1464,
+    "max_date": "2026-02-27"
+  },
+  "ohchr": {
+    "count": 71
+  },
+  "gdelt_events": {
+    "count": 293543,
+    "max_date": "2026-02-28"
+  },
+  "gdelt_coercive": {
+    "count": 360914,
+    "max_date": "2026-03-01"
+  },
+  "gdelt_redlines": {
+    "count": 8784,
+    "max_date": "2026-03-01"
+  },
+  "gas_flows": {
+    "count": 1891,
+    "max_date": "2026-02-04"
+  },
+  "fossil_revenue": {
+    "count": 11512,
+    "max_date": "2026-02-01"
+  },
+  "sanctions": {
+    "count": 70520
+  },
+  "cyber": {
+    "count": 3414
+  },
+  "disinfo": {
+    "count": 14497
+  },
+  "baltic": {
+    "count": 7
+  },
+  "leiden": {
+    "count": 153
+  }
+}

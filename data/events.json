@@ -1,0 +1,353 @@
+[
+  {
+    "date": "2024-02-17",
+    "name": "Avdiivka Falls",
+    "importance": 9,
+    "confidence": "High",
+    "territorial": 4,
+    "strategic": 3,
+    "cascade": 3
+  },
+  {
+    "date": "2024-04-28",
+    "name": "Ocheretyne Captured",
+    "importance": 6,
+    "confidence": "High",
+    "territorial": 2,
+    "strategic": 2,
+    "cascade": 2
+  },
+  {
+    "date": "2024-09-09",
+    "name": "Krasnohorivka Falls",
+    "importance": 7,
+    "confidence": "High",
+    "territorial": 3,
+    "strategic": 2,
+    "cascade": 2
+  },
+  {
+    "date": "2024-10-01",
+    "name": "Vuhledar Falls",
+    "importance": 8,
+    "confidence": "High",
+    "territorial": 3,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2025-01-06",
+    "name": "Kurakhove Falls",
+    "importance": 7,
+    "confidence": "High",
+    "territorial": 3,
+    "strategic": 2,
+    "cascade": 2
+  },
+  {
+    "date": "2025-01-15",
+    "name": "Selydove Captured",
+    "importance": 6,
+    "confidence": "High",
+    "territorial": 2,
+    "strategic": 2,
+    "cascade": 1
+  },
+  {
+    "date": "2025-07-31",
+    "name": "Chasiv Yar Falls",
+    "importance": 8,
+    "confidence": "High",
+    "territorial": 3,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2025-08-07",
+    "name": "Toretsk Falls",
+    "importance": 8,
+    "confidence": "High",
+    "territorial": 3,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2024-02-28",
+    "name": "Tendra Spit Raids",
+    "importance": 3,
+    "confidence": "Medium",
+    "territorial": 1,
+    "strategic": 1,
+    "cascade": 0
+  },
+  {
+    "date": "2024-03-12",
+    "name": "March Russia Incursion",
+    "importance": 4,
+    "confidence": "High",
+    "territorial": 1,
+    "strategic": 1,
+    "cascade": 1
+  },
+  {
+    "date": "2024-05-10",
+    "name": "Kharkiv Offensive",
+    "importance": 8,
+    "confidence": "High",
+    "territorial": 2,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2024-07-18",
+    "name": "Pokrovsk Offensive",
+    "importance": 9,
+    "confidence": "High",
+    "territorial": 4,
+    "strategic": 3,
+    "cascade": 3
+  },
+  {
+    "date": "2024-08-06",
+    "name": "Kursk Incursion",
+    "importance": 8,
+    "confidence": "High",
+    "territorial": 3,
+    "strategic": 2,
+    "cascade": 1
+  },
+  {
+    "date": "2024-11-01",
+    "name": "NE Donetsk Campaign",
+    "importance": 6,
+    "confidence": "Medium",
+    "territorial": 2,
+    "strategic": 2,
+    "cascade": 2
+  },
+  {
+    "date": "2024-11-29",
+    "name": "Kupiansk Offensive",
+    "importance": 8,
+    "confidence": "High",
+    "territorial": 2,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2025-01-26",
+    "name": "Velyka Novosilka Falls",
+    "importance": 6,
+    "confidence": "High",
+    "territorial": 2,
+    "strategic": 2,
+    "cascade": 1
+  },
+  {
+    "date": "2025-02-19",
+    "name": "Sumy Offensive",
+    "importance": 5,
+    "confidence": "High",
+    "territorial": 1,
+    "strategic": 2,
+    "cascade": 1
+  },
+  {
+    "date": "2025-03-28",
+    "name": "Novopavlivka Offensive",
+    "importance": 4,
+    "confidence": "Medium",
+    "territorial": 1,
+    "strategic": 1,
+    "cascade": 1
+  },
+  {
+    "date": "2025-08-11",
+    "name": "Dobropillia (UKR Victory)",
+    "importance": 8,
+    "confidence": "High",
+    "territorial": 2,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2025-09-01",
+    "name": "Pokrovsk Assault Begins",
+    "importance": 7,
+    "confidence": "High",
+    "territorial": 2,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2025-09-11",
+    "name": "Huliaipole Offensive",
+    "importance": 7,
+    "confidence": "High",
+    "territorial": 2,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2025-12-23",
+    "name": "Siversk Abandoned",
+    "importance": 6,
+    "confidence": "High",
+    "territorial": 2,
+    "strategic": 2,
+    "cascade": 1
+  },
+  {
+    "date": "2024-02-15",
+    "name": "Belgorod Strike",
+    "importance": 3,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 1,
+    "cascade": 0
+  },
+  {
+    "date": "2024-09-03",
+    "name": "Poltava Strike",
+    "importance": 6,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 2,
+    "cascade": 1
+  },
+  {
+    "date": "2025-03-03",
+    "name": "Cherkaske Strike",
+    "importance": 4,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 1,
+    "cascade": 0
+  },
+  {
+    "date": "2025-04-13",
+    "name": "Sumy Airstrike",
+    "importance": 4,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 1,
+    "cascade": 0
+  },
+  {
+    "date": "2025-06-01",
+    "name": "RU Strikes on Training",
+    "importance": 5,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 2,
+    "cascade": 1
+  },
+  {
+    "date": "2025-06-01",
+    "name": "Op. Spiderweb",
+    "importance": 9,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 3,
+    "cascade": 3
+  },
+  {
+    "date": "2024-02-08",
+    "name": "Syrskyi Replaces Zaluzhnyi",
+    "importance": 6,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 2,
+    "cascade": 2
+  },
+  {
+    "date": "2024-04-19",
+    "name": "US $61B Aid Approved",
+    "importance": 7,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2024-10-14",
+    "name": "DPRK Troops to Russia",
+    "importance": 7,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2024-11-05",
+    "name": "Trump Wins Election",
+    "importance": 7,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2025-06-30",
+    "name": "Luhansk Fully Captured",
+    "importance": 9,
+    "confidence": "Medium",
+    "territorial": 4,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2024-05-21",
+    "name": "EU Frozen Asset Revenues",
+    "importance": 6,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 2,
+    "cascade": 2
+  },
+  {
+    "date": "2024-06-15",
+    "name": "Czech Ammo Initiative",
+    "importance": 7,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2024-07-10",
+    "name": "NATO Summit EUR 40B",
+    "importance": 7,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2024-08-01",
+    "name": "F-16 Deliveries Begin",
+    "importance": 7,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2024-11-17",
+    "name": "Storm Shadow RU Auth",
+    "importance": 7,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 3,
+    "cascade": 2
+  },
+  {
+    "date": "2025-03-04",
+    "name": "ReArm Europe EUR 800B",
+    "importance": 6,
+    "confidence": "High",
+    "territorial": 0,
+    "strategic": 2,
+    "cascade": 2
+  }
+]
