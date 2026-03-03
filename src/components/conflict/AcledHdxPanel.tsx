@@ -51,8 +51,8 @@ export default function AcledHdxPanel() {
 
   return (
     <div>
-      <h3>ACLED HDX Regional Data</h3>
-      <p className="tab-subtitle">ACLED Humanitarian Data Exchange — violence, civilian targeting, and demonstrations</p>
+      <h3>ACLED HDX — Ukraine Regional Data</h3>
+      <p className="tab-subtitle">ACLED Humanitarian Data Exchange — violence, civilian targeting, and demonstrations across Ukrainian oblasts</p>
 
       <div className="chart-card">
         <h3>Monthly Events by Type</h3>
@@ -76,7 +76,7 @@ export default function AcledHdxPanel() {
       </div>
 
       <div className="chart-card">
-        <h3>Top 15 Regions — Events by Type</h3>
+        <h3>Top 15 Ukrainian Oblasts — Events by Type</h3>
         <ResponsiveContainer width="100%" height={450}>
           <BarChart data={topRegions} layout="vertical" margin={{ left: 150, right: 40 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
