@@ -26,6 +26,7 @@ import { loadDailyEvents, loadEventsByType, loadEventsByRegion, loadMonthlyEvent
 import type { DailyEvent, EventByType, EventByRegion, MonthlyEventData } from '../types';
 
 import { PALETTE_20 } from '../utils/colors';
+import { smooth7Day } from '../utils/smoothing';
 import { useSeriesToggle } from '../hooks/useSeriesToggle';
 
 // Calculate Pearson correlation coefficient
@@ -61,6 +62,7 @@ export default function ConflictEventsTab() {
   const [monthlyEvents, setMonthlyEvents] = useState<MonthlyEventData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [smoothUcdp, setSmoothUcdp] = useState(false);
   const eventsToggle = useSeriesToggle(EVENTS_GROUPS);
   const fatalitiesToggle = useSeriesToggle(FATALITIES_GROUPS);
 
@@ -119,7 +121,10 @@ export default function ConflictEventsTab() {
   // Top 10 regions - sorted alphabetically
   const topRegions = eventsByRegion.slice(0, 10).sort((a, b) => a.region.localeCompare(b.region));
 
-  const recentEvents = dailyEvents.slice(-365);
+  const recentEventsRaw = dailyEvents.slice(-365);
+  const recentEvents = smoothUcdp
+    ? smooth7Day(recentEventsRaw, ['ucdp_events', 'ucdp_fatalities'])
+    : recentEventsRaw;
 
   // Find last date with real UCDP data (non-zero events)
   let lastUcdpIdx = -1;
@@ -219,7 +224,24 @@ export default function ConflictEventsTab() {
       <p className="chart-note">ACLED includes non-fatal events and publishes weekly. UCDP requires at least one fatal casualty, publishes in confirmed batches, and covers different event type scopes.</p>
 
       <div className="chart-card">
-        <h3>Daily Event Count (ACLED vs UCDP) <DualPaneInfo /></h3>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+          <h3 style={{ margin: 0 }}>Daily Event Count (ACLED vs UCDP) <DualPaneInfo /></h3>
+          <button
+            onClick={() => setSmoothUcdp(p => !p)}
+            style={{
+              background: smoothUcdp ? '#3b82f6' : 'transparent',
+              color: smoothUcdp ? '#fff' : '#888',
+              border: `1px solid ${smoothUcdp ? '#3b82f6' : '#555'}`,
+              padding: '4px 12px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              transition: 'all 0.2s',
+            }}
+          >
+            {smoothUcdp ? 'UCDP Smoothed (7-day avg)' : 'Smooth UCDP batch spikes'}
+          </button>
+        </div>
         <p className="chart-note">Top: Daily event count | Bottom: 7-day rate of change (%)</p>
         <div className="correlation-stats">
           <div className="corr-stat">
@@ -391,7 +413,10 @@ export default function ConflictEventsTab() {
       </div>
 
       <div className="chart-card">
-        <h3>Daily Fatalities (ACLED vs UCDP) <DualPaneInfo /></h3>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+          <h3 style={{ margin: 0 }}>Daily Fatalities (ACLED vs UCDP) <DualPaneInfo /></h3>
+          {smoothUcdp && <span style={{ fontSize: '12px', color: '#3b82f6' }}>UCDP smoothed (7-day avg)</span>}
+        </div>
         <p className="chart-note">Top: Daily fatalities | Bottom: 7-day rate of change (%)</p>
         <div className="correlation-stats">
           <div className="corr-stat">

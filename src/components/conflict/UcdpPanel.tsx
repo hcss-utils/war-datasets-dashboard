@@ -6,6 +6,7 @@ import {
 import { loadDailyEvents, loadUcdpByViolenceType, loadUcdpMonthlyByType } from '../../data/newLoader';
 import type { DailyEvent, UcdpByViolenceType, UcdpMonthlyByType } from '../../types';
 import { PALETTE_20 } from '../../utils/colors';
+import { smooth7Day } from '../../utils/smoothing';
 
 const fmt = (n: number) => n.toLocaleString();
 const VIOLENCE_COLORS: Record<string, string> = {
@@ -20,6 +21,7 @@ export default function UcdpPanel() {
   const [monthlyByType, setMonthlyByType] = useState<UcdpMonthlyByType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [smoothPeaks, setSmoothPeaks] = useState(false);
 
   useEffect(() => {
     Promise.all([loadDailyEvents(), loadUcdpByViolenceType(), loadUcdpMonthlyByType()])
@@ -77,9 +79,26 @@ export default function UcdpPanel() {
       </div>
 
       <div className="chart-card">
-        <h3>Daily UCDP Events & Fatalities</h3>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+          <h3 style={{ margin: 0 }}>Daily UCDP Events & Fatalities</h3>
+          <button
+            onClick={() => setSmoothPeaks(p => !p)}
+            style={{
+              background: smoothPeaks ? '#3b82f6' : 'transparent',
+              color: smoothPeaks ? '#fff' : '#888',
+              border: `1px solid ${smoothPeaks ? '#3b82f6' : '#555'}`,
+              padding: '4px 12px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              transition: 'all 0.2s',
+            }}
+          >
+            {smoothPeaks ? 'Smoothed (7-day avg)' : 'Smooth batch spikes'}
+          </button>
+        </div>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={ucdpDays} margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
+          <LineChart data={smoothPeaks ? smooth7Day(ucdpDays, ['ucdp_events', 'ucdp_fatalities']) : ucdpDays} margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
             <XAxis dataKey="date" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} angle={-45} textAnchor="end" height={50}
               tickFormatter={(d) => new Date(d).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })} />
