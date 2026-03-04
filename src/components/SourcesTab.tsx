@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface DataSource {
   id: string;
@@ -138,6 +138,29 @@ const DATA_SOURCES: DataSource[] = [
     ],
   },
   {
+    id: 'kiel',
+    name: 'Kiel Institute',
+    fullName: 'Kiel Institute for the World Economy - Ukraine Support Tracker',
+    url: 'https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/',
+    description: 'Systematic tracking of bilateral aid commitments to Ukraine from governments worldwide, covering military, financial, and humanitarian assistance with EUR valuations.',
+    dateRange: 'Jan 2022 - Oct 2025',
+    records: '5,800+ commitments from 26 donors',
+    spatialResolution: 'Country-level (donor)',
+    updateFrequency: 'Monthly updates',
+    strengths: [
+      'Comprehensive coverage of 26 major donor countries',
+      'Breakdown by aid type (Military, Financial, Humanitarian)',
+      'EUR-normalized values for cross-country comparison',
+      'Monthly timeline for trend analysis',
+    ],
+    limitations: [
+      'Tracks commitments, not actual disbursements',
+      'Some multi-year pledges allocated to announcement month',
+      'May not capture all bilateral or in-kind contributions',
+    ],
+    tables: ['economic.kiel_aid_by_donor', 'economic.kiel_aid_timeline'],
+  },
+  {
     id: 'isw',
     name: 'ISW',
     fullName: 'Institute for the Study of War - Conflict Mapping',
@@ -167,7 +190,7 @@ const DATA_SOURCES: DataSource[] = [
     id: 'mdaa',
     name: 'MDAA Tracker',
     fullName: 'Missile Defense Advocacy Alliance - Air War Tracker',
-    url: 'https://missiledefenseadvocacy.org/ukraine-air-war/',
+    url: 'https://www.missiledefenseadvocacy.org/missile-threat-and-proliferation/todays-missile-threat/ukrainian-war-updates/',
     description: 'Daily tracking of aerial threats (missiles and UAVs) with intercept statistics. Provides national-level aggregates of attack and defense outcomes.',
     dateRange: 'Jan 2025 - Aug 2025',
     records: '234 daily records',
@@ -206,6 +229,29 @@ const DATA_SOURCES: DataSource[] = [
       'Based on official Ukrainian reports',
     ],
     tables: ['aerial_assaults.missile_attacks', 'aerial_assaults.weapon_types'],
+  },
+  {
+    id: 'sipri',
+    name: 'SIPRI',
+    fullName: 'Stockholm International Peace Research Institute - Military Expenditure Database',
+    url: 'https://www.sipri.org/databases/milex',
+    description: 'Global military expenditure data covering 173 countries from 1949 onwards. Provides consistent, comparable data on military spending using open-source government budget information.',
+    dateRange: '1949 - 2024',
+    records: '9 key countries tracked (76 years)',
+    spatialResolution: 'Country-level',
+    updateFrequency: 'Annual release (April)',
+    strengths: [
+      'Longest-running military spending dataset globally',
+      'Constant USD (2022) for inflation-adjusted comparison',
+      'Consistent methodology across countries and time',
+      'Peer-reviewed and widely cited',
+    ],
+    limitations: [
+      'Annual data only (no sub-annual breakdown)',
+      'Russia data may undercount off-budget military spending',
+      'Some countries have gaps in reporting',
+    ],
+    tables: ['economic.sipri_expenditure'],
   },
   {
     id: 'ohchr',
@@ -309,9 +355,9 @@ const DATA_SOURCES: DataSource[] = [
   },
 ];
 
-function SourceCard({ source }: { source: DataSource }) {
+function SourceCard({ source, highlighted }: { source: DataSource; highlighted: boolean }) {
   return (
-    <div className="source-card">
+    <div className={`source-card ${highlighted ? 'highlighted' : ''}`} id={`source-${source.id}`}>
       <div className="source-header">
         <h3>{source.name}</h3>
         <a href={source.url} target="_blank" rel="noopener noreferrer" className="source-link">
@@ -370,6 +416,37 @@ function SourceCard({ source }: { source: DataSource }) {
 }
 
 export default function SourcesTab() {
+  const [highlightedSource, setHighlightedSource] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      // Handle both #source-{id} and #sources-{id} formats
+      let sourceId: string | null = null;
+      if (hash.startsWith('#sources-')) {
+        sourceId = hash.replace('#sources-', '');
+      } else if (hash.startsWith('#source-')) {
+        sourceId = hash.replace('#source-', '');
+      }
+
+      if (sourceId) {
+        setHighlightedSource(sourceId);
+        // Scroll to the source card
+        const element = document.getElementById(`source-${sourceId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        // Remove highlight after 3 seconds
+        setTimeout(() => setHighlightedSource(null), 3000);
+      }
+    };
+
+    // Check on mount
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   return (
     <div className="sources-tab">
       <div className="sources-intro">
@@ -385,7 +462,7 @@ export default function SourcesTab() {
             <span className="stat-label">Total Records</span>
           </div>
           <div className="summary-stat">
-            <span className="stat-value">45</span>
+            <span className="stat-value">48</span>
             <span className="stat-label">Database Tables</span>
           </div>
           <div className="summary-stat">
@@ -401,7 +478,7 @@ export default function SourcesTab() {
 
       <div className="sources-grid">
         {DATA_SOURCES.map((source) => (
-          <SourceCard key={source.id} source={source} />
+          <SourceCard key={source.id} source={source} highlighted={highlightedSource === source.id} />
         ))}
       </div>
 

@@ -10,6 +10,40 @@ import ChartLegend from './shared/ChartLegend';
 import { filterByDateRange, getLayerData, linearTrend } from '../../data/processing';
 import type { DailyArea, MilitaryEvent } from '../../types';
 
+const SOURCE_ID_MAP: Record<string, string> = {
+  'ACLED': 'acled',
+  'UCDP': 'ucdp',
+  'ACLED/UCDP': 'acled',
+  'VIINA': 'viina',
+  'Bellingcat': 'bellingcat',
+  'MDAA Tracker': 'mdaa',
+  'Ukraine MOD': 'equipment',
+  'DeepState': 'deepstate',
+  'OHCHR': 'ohchr',
+  'UNHCR': 'unhcr',
+  'HDX HAPI': 'hapi',
+};
+
+const SourceLink = ({ source }: { source: string }) => {
+  const sourceId = SOURCE_ID_MAP[source] || source.toLowerCase();
+  return (
+    <a
+      href={`#source-${sourceId}`}
+      className="source-link-inline"
+      onClick={(e) => {
+        e.preventDefault();
+        window.location.hash = 'sources';
+        setTimeout(() => {
+          const el = document.getElementById(`source-${sourceId}`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }}
+    >
+      ({source})
+    </a>
+  );
+};
+
 interface Props {
   dailyAreas: DailyArea[];
   events: MilitaryEvent[];
@@ -41,7 +75,7 @@ export default function TerritoryControlChart({ dailyAreas, events }: Props) {
 
   return (
     <div className="chart-card">
-      <h2>Russian-Controlled Territory in Ukraine</h2>
+      <h2>Russian-Controlled Territory in Ukraine <SourceLink source="DeepState" /></h2>
       <p className="subtitle">Total area under Russian control (km²) with key military events</p>
       <ChartLegend items={[
         { label: state.showInterpolation ? 'Interpolated' : 'Raw', color: '#2ca02c' },

@@ -15,10 +15,22 @@ import {
   ReferenceLine,
   Cell,
   LabelList,
+  Brush,
 } from 'recharts';
-import { loadCasualties, loadRefugeesByCountry, loadRefugeeTotals } from '../data/newLoader';
-import type { CasualtyData, RefugeeByCountry, RefugeeTotals } from '../types';
-import { useSeriesToggle } from '../hooks/useSeriesToggle';
+import {
+  loadCasualties,
+  loadRefugeesByCountry,
+  loadRefugeeTotals,
+  loadHapiIdpsTotal,
+  loadHapiFunding,
+} from '../data/newLoader';
+import type {
+  CasualtyData,
+  RefugeeByCountry,
+  RefugeeTotals,
+  HapiIdpsTotal,
+  HapiFunding,
+} from '../types';
 
 // Format number with thousands separators
 const fmt = (n: number) => n.toLocaleString();
@@ -31,27 +43,63 @@ const TAB20_COLORS = [
   '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5',
 ];
 
-const CASUALTY_GROUPS: Record<string, string> = {
-  killed: 'killed', injured: 'injured',
-  killed_rate: 'killed', injured_rate: 'injured',
+const SOURCE_ID_MAP: Record<string, string> = {
+  'ACLED': 'acled',
+  'UCDP': 'ucdp',
+  'ACLED/UCDP': 'acled',
+  'VIINA': 'viina',
+  'Bellingcat': 'bellingcat',
+  'MDAA Tracker': 'mdaa',
+  'Ukraine MOD': 'equipment',
+  'DeepState': 'deepstate',
+  'OHCHR': 'ohchr',
+  'UNHCR': 'unhcr',
+  'HDX HAPI': 'hapi',
+};
+
+const SourceLink = ({ source }: { source: string }) => {
+  const sourceId = SOURCE_ID_MAP[source] || source.toLowerCase();
+  return (
+    <a
+      href={`#source-${sourceId}`}
+      className="source-link-inline"
+      onClick={(e) => {
+        e.preventDefault();
+        window.location.hash = 'sources';
+        setTimeout(() => {
+          const el = document.getElementById(`source-${sourceId}`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }}
+    >
+      ({source})
+    </a>
+  );
 };
 
 export default function HumanitarianTab() {
   const [casualties, setCasualties] = useState<CasualtyData[]>([]);
   const [refugeesByCountry, setRefugeesByCountry] = useState<RefugeeByCountry[]>([]);
   const [refugeeTotals, setRefugeeTotals] = useState<RefugeeTotals[]>([]);
+  const [idpsTotal, setIdpsTotal] = useState<HapiIdpsTotal[]>([]);
+  const [funding, setFunding] = useState<HapiFunding[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const casualtyToggle = useSeriesToggle(CASUALTY_GROUPS);
-  const regionToggle = useSeriesToggle();
-  const refugeeToggle = useSeriesToggle();
 
   useEffect(() => {
-    Promise.all([loadCasualties(), loadRefugeesByCountry(), loadRefugeeTotals()])
-      .then(([cas, refCountry, refTotals]) => {
+    Promise.all([
+      loadCasualties(),
+      loadRefugeesByCountry(),
+      loadRefugeeTotals(),
+      loadHapiIdpsTotal(),
+      loadHapiFunding(),
+    ])
+      .then(([cas, refCountry, refTotals, idps, fund]) => {
         setCasualties(cas);
         setRefugeesByCountry(refCountry);
         setRefugeeTotals(refTotals);
+        setIdpsTotal(idps);
+        setFunding(fund);
         setLoading(false);
       })
       .catch((err) => {
@@ -119,11 +167,8 @@ export default function HumanitarianTab() {
     .sort((a, b) => (b.killed + b.injured) - (a.killed + a.injured))
     .slice(0, 15);
 
-  // Filter refugee totals to war-era (2022+) — pre-war figures are negligible
-  const warEraRefugees = refugeeTotals.filter(r => r.year >= 2022);
-
   // Latest refugee totals
-  const latestRefugees = warEraRefugees[warEraRefugees.length - 1];
+  const latestRefugees = refugeeTotals[refugeeTotals.length - 1];
 
   // Top destination countries (latest year)
   const latestYear = Math.max(...refugeesByCountry.map((r) => r.year));
@@ -132,10 +177,22 @@ export default function HumanitarianTab() {
     .sort((a, b) => b.refugees - a.refugees)
     .slice(0, 10);
 
+  // Latest IDP count
+  const latestIdps = idpsTotal[idpsTotal.length - 1];
+
+  // Format funding data
+  const fundingData = funding.map(f => ({
+    date: f.date,
+    requirements: f.requirements_usd / 1e9,
+    funded: f.funding_usd / 1e9,
+    gap: (f.requirements_usd - f.funding_usd) / 1e9,
+    pct: f.funding_pct,
+  }));
+
   return (
     <div className="humanitarian-tab">
       <h2>Humanitarian Impact</h2>
-      <p className="tab-subtitle">Civilian casualties (OHCHR) and refugee data (UNHCR)</p>
+      <p className="tab-subtitle">Civilian casualties, refugees, IDPs, and humanitarian funding</p>
 
       <div className="stat-cards humanitarian-stats">
         <div className="stat-card highlight-red">
@@ -151,17 +208,13 @@ export default function HumanitarianTab() {
           <span className="stat-label">Refugees ({latestYear})</span>
         </div>
         <div className="stat-card">
-          <span className="stat-value">{latestRefugees?.destination_countries || 'N/A'}</span>
-          <span className="stat-label">Destination Countries</span>
+          <span className="stat-value">{latestIdps?.total_idps?.toLocaleString() || 'N/A'}</span>
+          <span className="stat-label">Internally Displaced</span>
         </div>
       </div>
 
-      <p className="chart-note" style={{ background: 'rgba(239,68,68,0.1)', padding: '8px 12px', borderRadius: 4, border: '1px solid rgba(239,68,68,0.3)' }}>
-        OHCHR verified figures represent confirmed minimums. Actual civilian casualties are likely considerably higher. Data may not reflect latest OHCHR monthly updates.
-      </p>
-
       <div className="chart-card">
-        <h3>Monthly Civilian Casualties (OHCHR)</h3>
+        <h3>Monthly Civilian Casualties <SourceLink source="OHCHR" /></h3>
         <p className="chart-note">Top: Monthly counts | Bottom: Month-over-month rate of change (%)</p>
         <div className="dual-chart-container">
           <ResponsiveContainer width="100%" height={200}>
@@ -178,7 +231,7 @@ export default function HumanitarianTab() {
                 }}
                 formatter={(value: number) => fmt(value)}
               />
-              <Legend onClick={(e: any) => casualtyToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: casualtyToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+              <Legend />
               <Area
                 type="monotone"
                 dataKey="killed"
@@ -186,7 +239,6 @@ export default function HumanitarianTab() {
                 stackId="1"
                 stroke="#ef4444"
                 fill="#ef4444"
-                hide={!casualtyToggle.isVisible('killed')}
               />
               <Area
                 type="monotone"
@@ -195,7 +247,6 @@ export default function HumanitarianTab() {
                 stackId="1"
                 stroke="#f97316"
                 fill="#f97316"
-                hide={!casualtyToggle.isVisible('injured')}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -209,7 +260,7 @@ export default function HumanitarianTab() {
                 angle={-45}
                 textAnchor="end"
                 height={50}
-                interval={2}
+                interval={0}
                 tickFormatter={(d) => {
                   const [y, m] = d.split('-');
                   const year = parseInt(y);
@@ -228,10 +279,10 @@ export default function HumanitarianTab() {
                 }}
                 formatter={(value: number) => `${value.toFixed(1)}%`}
               />
-              <Legend onClick={(e: any) => casualtyToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: casualtyToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+              <Legend />
               <ReferenceLine y={0} stroke="#888" />
-              <Line type="monotone" dataKey="killed_rate" name="Killed Rate" stroke="#ef4444" dot={false} strokeWidth={1.5} hide={!casualtyToggle.isVisible('killed_rate')} />
-              <Line type="monotone" dataKey="injured_rate" name="Injured Rate" stroke="#f97316" dot={false} strokeWidth={1.5} hide={!casualtyToggle.isVisible('injured_rate')} />
+              <Line type="monotone" dataKey="killed_rate" name="Killed Rate" stroke="#ef4444" dot={false} strokeWidth={1.5} />
+              <Line type="monotone" dataKey="injured_rate" name="Injured Rate" stroke="#f97316" dot={false} strokeWidth={1.5} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -239,7 +290,76 @@ export default function HumanitarianTab() {
 
       <div className="chart-grid-2">
         <div className="chart-card">
-          <h3>Casualties by Region</h3>
+          <h3>Internally Displaced Persons <SourceLink source="HDX HAPI" /></h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={idpsTotal} margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis
+                dataKey="date"
+                stroke="#888"
+                tick={{ fill: '#888', fontSize: 10 }}
+                angle={-45}
+                textAnchor="end"
+                height={50}
+                tickFormatter={(d) => new Date(d).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}
+              />
+              <YAxis
+                stroke="#888"
+                tick={{ fill: '#888', fontSize: 10 }}
+                tickFormatter={(v) => `${(v / 1e6).toFixed(1)}M`}
+              />
+              <Tooltip
+                contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
+                labelFormatter={(d) => new Date(d).toLocaleDateString()}
+                formatter={(value: number) => [fmt(value), 'IDPs']}
+              />
+              <Area
+                type="monotone"
+                dataKey="total_idps"
+                name="IDPs"
+                stroke="#8b5cf6"
+                fill="#8b5cf6"
+                fillOpacity={0.3}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="chart-card">
+          <h3>Humanitarian Funding Gap <SourceLink source="HDX HAPI" /></h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={fundingData} margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis
+                dataKey="date"
+                stroke="#888"
+                tick={{ fill: '#888', fontSize: 10 }}
+                angle={-45}
+                textAnchor="end"
+                height={50}
+                tickFormatter={(d) => new Date(d).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}
+              />
+              <YAxis
+                stroke="#888"
+                tick={{ fill: '#888', fontSize: 10 }}
+                tickFormatter={(v) => `$${v.toFixed(0)}B`}
+              />
+              <Tooltip
+                contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
+                labelFormatter={(d) => new Date(d).toLocaleDateString()}
+                formatter={(value: number, name: string) => [`$${value.toFixed(2)}B`, name]}
+              />
+              <Legend />
+              <Bar dataKey="funded" name="Funded" stackId="a" fill="#22c55e" />
+              <Bar dataKey="gap" name="Gap" stackId="a" fill="#ef4444" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="chart-grid-2">
+        <div className="chart-card">
+          <h3>Casualties by Region <SourceLink source="OHCHR" /></h3>
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={regionData} layout="vertical" margin={{ right: 80 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -256,17 +376,17 @@ export default function HumanitarianTab() {
                 itemStyle={{ color: '#fff' }}
                 formatter={(value: number) => fmt(value)}
               />
-              <Legend onClick={(e: any) => regionToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: regionToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
-              <Bar dataKey="killed" name="Killed" fill="#ef4444" hide={!regionToggle.isVisible('killed')}>
+              <Legend />
+              <Bar dataKey="killed" name="Killed" fill="#ef4444">
                 <LabelList dataKey="killed" position="right" fill="#888" fontSize={9} formatter={(v: number) => fmt(v)} />
               </Bar>
-              <Bar dataKey="injured" name="Injured" fill="#f97316" hide={!regionToggle.isVisible('injured')} />
+              <Bar dataKey="injured" name="Injured" fill="#f97316" />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         <div className="chart-card">
-          <h3>Top Refugee Destinations ({latestYear})</h3>
+          <h3>Top Refugee Destinations ({latestYear}) <SourceLink source="UNHCR" /></h3>
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={topDestinations} layout="vertical" margin={{ right: 80 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -300,9 +420,9 @@ export default function HumanitarianTab() {
       </div>
 
       <div className="chart-card">
-        <h3>Refugee Totals by Year (since 2022)</h3>
+        <h3>Refugee Totals by Year <SourceLink source="UNHCR" /></h3>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={warEraRefugees}>
+          <BarChart data={refugeeTotals}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
             <XAxis dataKey="year" stroke="#888" tick={{ fill: '#888', fontSize: 11 }} />
             <YAxis
@@ -315,13 +435,11 @@ export default function HumanitarianTab() {
               itemStyle={{ color: '#fff' }}
               formatter={(value: number) => fmt(value)}
             />
-            <Legend onClick={(e: any) => refugeeToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: refugeeToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
-            <Bar dataKey="total_refugees" name="Refugees" fill="#3b82f6" hide={!refugeeToggle.isVisible('total_refugees')}>
+            <Legend />
+            <Bar dataKey="total_refugees" name="Refugees" fill="#3b82f6">
               <LabelList dataKey="total_refugees" position="top" fill="#888" fontSize={9} formatter={(v: number) => `${(v / 1000000).toFixed(1)}M`} />
             </Bar>
-            <Bar dataKey="total_asylum_seekers" name="Asylum Seekers" fill="#8b5cf6" hide={!refugeeToggle.isVisible('total_asylum_seekers')}>
-              <LabelList dataKey="total_asylum_seekers" position="top" fill="#888" fontSize={9} formatter={(v: number) => v > 0 ? `${(v / 1000000).toFixed(1)}M` : ''} />
-            </Bar>
+            <Bar dataKey="total_asylum_seekers" name="Asylum Seekers" fill="#8b5cf6" />
           </BarChart>
         </ResponsiveContainer>
       </div>

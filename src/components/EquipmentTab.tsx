@@ -17,10 +17,43 @@ import {
 import { loadEquipmentDaily, loadPersonnelDaily } from '../data/newLoader';
 import type { EquipmentDaily, PersonnelDaily } from '../types';
 import { DualPaneInfo, RateOfChangeInfo } from './InfoModal';
-import { useSeriesToggle } from '../hooks/useSeriesToggle';
 
 // Format number with thousands separators
 const fmt = (n: number) => n.toLocaleString();
+
+const SOURCE_ID_MAP: Record<string, string> = {
+  'ACLED': 'acled',
+  'UCDP': 'ucdp',
+  'ACLED/UCDP': 'acled',
+  'VIINA': 'viina',
+  'Bellingcat': 'bellingcat',
+  'MDAA Tracker': 'mdaa',
+  'Ukraine MOD': 'equipment',
+  'DeepState': 'deepstate',
+  'OHCHR': 'ohchr',
+  'UNHCR': 'unhcr',
+  'HDX HAPI': 'hapi',
+};
+
+const SourceLink = ({ source }: { source: string }) => {
+  const sourceId = SOURCE_ID_MAP[source] || source.toLowerCase();
+  return (
+    <a
+      href={`#source-${sourceId}`}
+      className="source-link-inline"
+      onClick={(e) => {
+        e.preventDefault();
+        window.location.hash = 'sources';
+        setTimeout(() => {
+          const el = document.getElementById(`source-${sourceId}`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }}
+    >
+      ({source})
+    </a>
+  );
+};
 
 const EQUIPMENT_COLORS: Record<string, string> = {
   tank: '#ef4444',
@@ -35,18 +68,20 @@ const EQUIPMENT_COLORS: Record<string, string> = {
   naval_ship: '#0ea5e9',
 };
 
-const EQUIP_GROUPS: Record<string, string> = {
-  tank: 'tank', apc: 'apc', field_artillery: 'artillery',
-  tank_rate: 'tank', apc_rate: 'apc', artillery_rate: 'artillery',
-};
-
 export default function EquipmentTab() {
   const [equipment, setEquipment] = useState<EquipmentDaily[]>([]);
   const [personnel, setPersonnel] = useState<PersonnelDaily[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const equipToggle = useSeriesToggle(EQUIP_GROUPS);
-  const airToggle = useSeriesToggle();
+  const [selectedEquipmentSeries, setSelectedEquipmentSeries] = useState<string | null>(null);
+  const [selectedAirSeries, setSelectedAirSeries] = useState<string | null>(null);
+
+  const handleEquipmentLegendClick = (dataKey: string) => {
+    setSelectedEquipmentSeries(prev => prev === dataKey ? null : dataKey);
+  };
+  const handleAirLegendClick = (dataKey: string) => {
+    setSelectedAirSeries(prev => prev === dataKey ? null : dataKey);
+  };
 
   useEffect(() => {
     Promise.all([loadEquipmentDaily(), loadPersonnelDaily()])
@@ -186,7 +221,7 @@ export default function EquipmentTab() {
       </div>
 
       <div className="chart-card">
-        <h3>Daily Personnel Losses <DualPaneInfo /></h3>
+        <h3>Daily Personnel Losses <SourceLink source="Ukraine MOD" /> <DualPaneInfo /></h3>
         <p className="chart-note">Top: Daily losses | Bottom: 7-day rate of change (%) <RateOfChangeInfo /></p>
         <div className="dual-chart-container">
           <ResponsiveContainer width="100%" height={200}>
@@ -230,8 +265,8 @@ export default function EquipmentTab() {
       </div>
 
       <div className="chart-card">
-        <h3>Daily Heavy Equipment Losses <DualPaneInfo /></h3>
-        <p className="chart-note">Top: Daily losses | Bottom: 7-day rate of change (%) <RateOfChangeInfo /></p>
+        <h3>Daily Heavy Equipment Losses <SourceLink source="Ukraine MOD" /> <DualPaneInfo /></h3>
+        <p className="chart-note">Top: Daily losses | Bottom: 7-day rate of change (%). Click legend to filter. <RateOfChangeInfo /></p>
         <div className="dual-chart-container">
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={equipmentRateData} margin={{ top: 10, right: 20, bottom: 0, left: 20 }}>
@@ -244,10 +279,21 @@ export default function EquipmentTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number) => fmt(value)}
               />
-              <Legend onClick={(e: any) => equipToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: equipToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
-              <Line type="monotone" dataKey="tank" name="Tanks" stroke={EQUIPMENT_COLORS.tank} dot={false} hide={!equipToggle.isVisible('tank')} />
-              <Line type="monotone" dataKey="apc" name="APCs" stroke={EQUIPMENT_COLORS.apc} dot={false} hide={!equipToggle.isVisible('apc')} />
-              <Line type="monotone" dataKey="field_artillery" name="Artillery" stroke={EQUIPMENT_COLORS.field_artillery} dot={false} hide={!equipToggle.isVisible('field_artillery')} />
+              <Legend
+                onClick={(e) => handleEquipmentLegendClick(e.dataKey as string)}
+                formatter={(value: string, entry: any) => (
+                  <span style={{
+                    color: selectedEquipmentSeries === null || selectedEquipmentSeries === entry.dataKey ? '#fff' : '#666',
+                    fontWeight: selectedEquipmentSeries === entry.dataKey ? 'bold' : 'normal',
+                    cursor: 'pointer'
+                  }}>
+                    {value}
+                  </span>
+                )}
+              />
+              <Line type="monotone" dataKey="tank" name="Tanks" stroke={EQUIPMENT_COLORS.tank} dot={false} hide={selectedEquipmentSeries !== null && selectedEquipmentSeries !== 'tank'} />
+              <Line type="monotone" dataKey="apc" name="APCs" stroke={EQUIPMENT_COLORS.apc} dot={false} hide={selectedEquipmentSeries !== null && selectedEquipmentSeries !== 'apc'} />
+              <Line type="monotone" dataKey="field_artillery" name="Artillery" stroke={EQUIPMENT_COLORS.field_artillery} dot={false} hide={selectedEquipmentSeries !== null && selectedEquipmentSeries !== 'field_artillery'} />
             </LineChart>
           </ResponsiveContainer>
           <ResponsiveContainer width="100%" height={200}>
@@ -269,11 +315,11 @@ export default function EquipmentTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number) => `${value.toFixed(2)}%`}
               />
-              <Legend onClick={(e: any) => equipToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: equipToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+              <Legend />
               <ReferenceLine y={0} stroke="#888" />
-              <Line type="monotone" dataKey="tank_rate" name="Tanks Rate" stroke={EQUIPMENT_COLORS.tank} dot={false} hide={!equipToggle.isVisible('tank_rate')} />
-              <Line type="monotone" dataKey="apc_rate" name="APCs Rate" stroke={EQUIPMENT_COLORS.apc} dot={false} hide={!equipToggle.isVisible('apc_rate')} />
-              <Line type="monotone" dataKey="artillery_rate" name="Artillery Rate" stroke={EQUIPMENT_COLORS.field_artillery} dot={false} hide={!equipToggle.isVisible('artillery_rate')} />
+              <Line type="monotone" dataKey="tank_rate" name="Tanks Rate" stroke={EQUIPMENT_COLORS.tank} dot={false} hide={selectedEquipmentSeries !== null && selectedEquipmentSeries !== 'tank'} />
+              <Line type="monotone" dataKey="apc_rate" name="APCs Rate" stroke={EQUIPMENT_COLORS.apc} dot={false} hide={selectedEquipmentSeries !== null && selectedEquipmentSeries !== 'apc'} />
+              <Line type="monotone" dataKey="artillery_rate" name="Artillery Rate" stroke={EQUIPMENT_COLORS.field_artillery} dot={false} hide={selectedEquipmentSeries !== null && selectedEquipmentSeries !== 'field_artillery'} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -281,7 +327,8 @@ export default function EquipmentTab() {
 
       <div className="chart-grid-2">
         <div className="chart-card">
-          <h3>Strategic Air Losses <span className="chart-source">(Ukraine MOD)</span></h3>
+          <h3>Cumulative Air Losses <SourceLink source="Ukraine MOD" /></h3>
+          <p className="chart-note">Click legend to filter series</p>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={equipment}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -301,43 +348,27 @@ export default function EquipmentTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number) => fmt(value)}
               />
-              <Legend onClick={(e: any) => airToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: airToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
-              <Line type="monotone" dataKey="aircraft" name="Aircraft" stroke={EQUIPMENT_COLORS.aircraft} dot={false} hide={!airToggle.isVisible('aircraft')} />
-              <Line type="monotone" dataKey="helicopter" name="Helicopters" stroke={EQUIPMENT_COLORS.helicopter} dot={false} hide={!airToggle.isVisible('helicopter')} />
+              <Legend
+                onClick={(e) => handleAirLegendClick(e.dataKey as string)}
+                formatter={(value: string, entry: any) => (
+                  <span style={{
+                    color: selectedAirSeries === null || selectedAirSeries === entry.dataKey ? '#fff' : '#666',
+                    fontWeight: selectedAirSeries === entry.dataKey ? 'bold' : 'normal',
+                    cursor: 'pointer'
+                  }}>
+                    {value}
+                  </span>
+                )}
+              />
+              <Line type="monotone" dataKey="aircraft" name="Aircraft" stroke={EQUIPMENT_COLORS.aircraft} dot={false} hide={selectedAirSeries !== null && selectedAirSeries !== 'aircraft'} />
+              <Line type="monotone" dataKey="helicopter" name="Helicopters" stroke={EQUIPMENT_COLORS.helicopter} dot={false} hide={selectedAirSeries !== null && selectedAirSeries !== 'helicopter'} />
+              <Line type="monotone" dataKey="drone" name="Drones" stroke={EQUIPMENT_COLORS.drone} dot={false} hide={selectedAirSeries !== null && selectedAirSeries !== 'drone'} />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         <div className="chart-card">
-          <h3>Drone Losses <span className="chart-source">(Ukraine MOD)</span></h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={equipment}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis
-                dataKey="date"
-                stroke="#888"
-                tick={{ fill: '#888', fontSize: 10 }}
-                angle={-45}
-                textAnchor="end"
-                height={60}
-                tickFormatter={(d) => new Date(d).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}
-              />
-              <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 11 }} tickFormatter={(v) => fmt(v)} />
-              <Tooltip
-                contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
-                itemStyle={{ color: '#fff' }}
-                labelFormatter={(d) => new Date(d).toLocaleDateString()}
-                formatter={(value: number) => fmt(value)}
-              />
-              <Line type="monotone" dataKey="drone" name="Drones" stroke={EQUIPMENT_COLORS.drone} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="chart-grid-2">
-        <div className="chart-card">
-          <h3>Daily Tank Losses (Last 180 Days) — Total: {fmt(dailyLosses.slice(-180).reduce((s, d) => s + d.tank, 0))} <span className="chart-source">(Ukraine MOD)</span></h3>
+          <h3>Daily Tank Losses (Last 180 Days) <SourceLink source="Ukraine MOD" /></h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={dailyLosses.slice(-180)}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />

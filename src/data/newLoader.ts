@@ -20,40 +20,14 @@ import type {
   BellingcatDaily,
   BellingcatMonthly,
   BellingcatIncident,
-  GdeltEventsDaily,
-  GdeltEventsMonthly,
-  GdeltEventsByTarget,
-  GdeltGoldstein,
-  GdeltCoerciveDaily,
-  GdeltCoerciveMonthly,
-  GdeltCoerciveSource,
-  GdeltRedlinesMonthly,
-  GdeltRedlinesSource,
-  GdeltVarxWeekly,
-  EnergyGasFlow,
-  EnergyFossilRevenue,
-  KielAidByDonor,
-  KielAidTimeline,
-  SanctionsEuSummary,
-  SanctionsEuTimeline,
-  SipriExpenditure,
-  CyberIncidentTimeline,
-  CyberIncidentByCountry,
-  DisinfoMonthly,
-  DisinfoByLanguage,
-  BalticCableIncident,
-  LeidenHybridEvent,
-  AcledHdxMonthly,
-  AcledHdxByRegion,
-  UcdpByViolenceType,
-  UcdpMonthlyByType,
 } from '../types';
 
 const BASE_PATH = import.meta.env.BASE_URL || '/';
+const BUILD_TS = import.meta.env.VITE_BUILD_TS || Date.now().toString();
 
 async function fetchJson<T>(path: string): Promise<T> {
   const url = `${BASE_PATH}data/${path}`.replace(/\/+/g, '/').replace(':/', '://');
-  const response = await fetch(url);
+  const response = await fetch(`${url}?v=${BUILD_TS}`);
   if (!response.ok) {
     throw new Error(`Failed to load ${path}: ${response.status} ${response.statusText}`);
   }
@@ -86,39 +60,129 @@ export const loadBellingcatDaily = () => fetchJson<BellingcatDaily[]>('bellingca
 export const loadBellingcatMonthly = () => fetchJson<BellingcatMonthly[]>('bellingcat_monthly.json');
 export const loadBellingcatIncidents = () => fetchJson<BellingcatIncident[]>('bellingcat_incidents.json');
 
-// GDELT loaders
-export const loadGdeltEventsDaily = () => fetchJson<GdeltEventsDaily[]>('gdelt_events_daily.json');
-export const loadGdeltEventsMonthly = () => fetchJson<GdeltEventsMonthly[]>('gdelt_events_monthly.json');
-export const loadGdeltEventsByTarget = () => fetchJson<GdeltEventsByTarget[]>('gdelt_events_by_target.json');
-export const loadGdeltGoldstein = () => fetchJson<GdeltGoldstein[]>('gdelt_goldstein.json');
-export const loadGdeltCoerciveDaily = () => fetchJson<GdeltCoerciveDaily[]>('gdelt_coercive_daily.json');
-export const loadGdeltCoerciveMonthly = () => fetchJson<GdeltCoerciveMonthly[]>('gdelt_coercive_monthly.json');
-export const loadGdeltCoerciveSources = () => fetchJson<GdeltCoerciveSource[]>('gdelt_coercive_sources.json');
-export const loadGdeltRedlinesMonthly = () => fetchJson<GdeltRedlinesMonthly[]>('gdelt_redlines_monthly.json');
-export const loadGdeltRedlinesSources = () => fetchJson<GdeltRedlinesSource[]>('gdelt_redlines_sources.json');
-export const loadGdeltVarxWeekly = () => fetchJson<GdeltVarxWeekly[]>('gdelt_varx_weekly.json');
+// Additional VIINA loaders for time unit switching
+import type {
+  ViinaWeekly,
+  ViinaWeeklyBySource,
+  ViinaDailyBySource,
+  HapiFoodPrice,
+  HapiIdps,
+  HapiIdpsTotal,
+  HapiHumanitarianNeeds,
+  HapiFunding,
+} from '../types';
 
-// Economic loaders
-export const loadEnergyGasFlows = () => fetchJson<EnergyGasFlow[]>('energy_gas_flows.json');
-export const loadEnergyFossilRevenue = () => fetchJson<EnergyFossilRevenue[]>('energy_fossil_revenue.json');
+export const loadViinaWeekly = () => fetchJson<ViinaWeekly[]>('viina_weekly.json');
+export const loadViinaWeeklyBySource = () => fetchJson<ViinaWeeklyBySource[]>('viina_weekly_by_source.json');
+export const loadViinaDailyBySource = () => fetchJson<ViinaDailyBySource[]>('viina_daily_by_source.json');
+
+// HAPI loaders
+export const loadHapiFoodPrices = () => fetchJson<HapiFoodPrice[]>('hapi_food_prices.json');
+export const loadHapiIdps = () => fetchJson<HapiIdps[]>('hapi_idps.json');
+export const loadHapiIdpsTotal = () => fetchJson<HapiIdpsTotal[]>('hapi_idps_total.json');
+export const loadHapiHumanitarianNeeds = () => fetchJson<HapiHumanitarianNeeds[]>('hapi_humanitarian_needs.json');
+export const loadHapiFunding = () => fetchJson<HapiFunding[]>('hapi_funding.json');
+
+// Category breakdown loaders
+import type {
+  UCDPByViolenceType,
+  UCDPMonthlyByType,
+  BellingcatByImpact,
+  BellingcatMonthlyByImpact,
+  ViinaByEventType,
+  ViinaMonthlyByEventType,
+  KIUOfficersSummary,
+  DailyArea,
+} from '../types';
+
+export const loadUCDPByViolenceType = () => fetchJson<UCDPByViolenceType[]>('ucdp_by_violence_type.json');
+export const loadUCDPMonthlyByType = () => fetchJson<UCDPMonthlyByType[]>('ucdp_monthly_by_type.json');
+export const loadBellingcatByImpact = () => fetchJson<BellingcatByImpact[]>('bellingcat_by_impact.json');
+export const loadBellingcatMonthlyByImpact = () => fetchJson<BellingcatMonthlyByImpact[]>('bellingcat_monthly_by_impact.json');
+export const loadViinaByEventType = () => fetchJson<ViinaByEventType[]>('viina_by_event_type.json');
+export const loadViinaMonthlyByEventType = () => fetchJson<ViinaMonthlyByEventType[]>('viina_monthly_by_event_type.json');
+
+// Losses tab loaders
+export const loadKIUOfficersSummary = () => fetchJson<KIUOfficersSummary>('kiu_officers_summary.json');
+export const loadDailyAreas = () => fetchJson<DailyArea[]>('daily_areas.json');
+
+// Kaggle missile data loaders
+export interface KaggleMissileDaily {
+  date: string;
+  drones_launched: number;
+  drones_destroyed: number;
+  missiles_launched: number;
+  missiles_destroyed: number;
+  total_launched: number;
+  total_destroyed: number;
+}
+
+export interface KaggleMissileWeapon {
+  model: string;
+  is_drone: boolean;
+  total_launched: number;
+  total_destroyed: number;
+  intercept_rate: number;
+}
+
+export const loadKaggleMissileDaily = () => fetchJson<KaggleMissileDaily[]>('kaggle_missile_daily.json');
+export const loadKaggleMissileWeapons = () => fetchJson<KaggleMissileWeapon[]>('kaggle_missile_weapons.json');
+
+// Oryx data loaders
+export interface OryxEquipmentDaily {
+  date: string;
+  country: string;
+  status: string;
+  category: string;
+  count: number;
+}
+
+export interface OryxByCategory {
+  category: string;
+  russia_total: number;
+  ukraine_total: number;
+}
+
+export const loadOryxEquipmentDaily = () => fetchJson<OryxEquipmentDaily[]>('oryx_equipment_daily.json');
+export const loadOryxByCategory = () => fetchJson<OryxByCategory[]>('oryx_by_category.json');
+
+// UkrDailyUpdate data loaders
+export interface UkrDailyUpdateIncident {
+  date: string;
+  equipment_type: string;
+  count: number;
+  description: string;
+}
+
+export interface UkrDailyUpdateByType {
+  equipment_type: string;
+  total: number;
+}
+
+export const loadUkrDailyUpdateIncidents = () => fetchJson<UkrDailyUpdateIncident[]>('ukrdailyupdate_incidents.json');
+export const loadUkrDailyUpdateByType = async (): Promise<UkrDailyUpdateByType[]> => {
+  const raw = await fetchJson<{ Type: string; count: number }[]>('ukrdailyupdate_by_type.json');
+  return raw.map(d => ({ equipment_type: d.Type, total: d.count }));
+};
+
+// Kiel aid & SIPRI loaders
+import type { KielAidByDonor, KielAidTimeline, KielAidDonorTimeline, SipriExpenditure, WorldBankGDP } from '../types';
 export const loadKielAidByDonor = () => fetchJson<KielAidByDonor[]>('kiel_aid_by_donor.json');
 export const loadKielAidTimeline = () => fetchJson<KielAidTimeline[]>('kiel_aid_timeline.json');
-export const loadSanctionsEuSummary = () => fetchJson<SanctionsEuSummary[]>('sanctions_eu_summary.json');
-export const loadSanctionsEuTimeline = () => fetchJson<SanctionsEuTimeline[]>('sanctions_eu_timeline.json');
+export const loadKielAidDonorTimeline = () => fetchJson<KielAidDonorTimeline[]>('kiel_aid_donor_timeline.json');
 export const loadSipriExpenditure = () => fetchJson<SipriExpenditure[]>('sipri_expenditure.json');
+export const loadWorldBankGDP = () => fetchJson<WorldBankGDP[]>('world_bank_gdp.json');
 
-// Sabotage & Disinfo loaders
-export const loadCyberIncidentsTimeline = () => fetchJson<CyberIncidentTimeline[]>('cyber_incidents_timeline.json');
-export const loadCyberIncidentsByCountry = () => fetchJson<CyberIncidentByCountry[]>('cyber_incidents_by_country.json');
-export const loadDisinfoMonthly = () => fetchJson<DisinfoMonthly[]>('disinfo_monthly.json');
-export const loadDisinfoByLanguage = () => fetchJson<DisinfoByLanguage[]>('disinfo_by_language.json');
-export const loadBalticCableIncidents = () => fetchJson<BalticCableIncident[]>('baltic_cable_incidents.json');
-export const loadLeidenHybridEvents = () => fetchJson<LeidenHybridEvent[]>('leiden_hybrid_events.json');
-
-// ACLED HDX loaders
-export const loadAcledHdxMonthly = () => fetchJson<AcledHdxMonthly[]>('acled_hdx_monthly.json');
-export const loadAcledHdxByRegion = () => fetchJson<AcledHdxByRegion[]>('acled_hdx_by_region.json');
-
-// UCDP loaders
-export const loadUcdpByViolenceType = () => fetchJson<UcdpByViolenceType[]>('ucdp_by_violence_type.json');
-export const loadUcdpMonthlyByType = () => fetchJson<UcdpMonthlyByType[]>('ucdp_monthly_by_type.json');
+// GDELT Threats loaders
+import type {
+  GdeltThreatsByDirection,
+  GdeltThreatsByCountry,
+  GdeltThreatsByCameo,
+  GdeltThreatsDyadic,
+  GdeltVarxWeekly,
+} from '../types';
+export const loadGdeltThreatsByDirection = () => fetchJson<GdeltThreatsByDirection[]>('gdelt_threats_by_direction.json');
+export const loadGdeltThreatsByCountry = () => fetchJson<GdeltThreatsByCountry[]>('gdelt_threats_by_country.json');
+export const loadGdeltThreatsByCameo = () => fetchJson<GdeltThreatsByCameo[]>('gdelt_threats_by_cameo.json');
+export const loadGdeltThreatsDyadic = () => fetchJson<GdeltThreatsDyadic[]>('gdelt_threats_dyadic.json');
+export const loadGdeltVarxWeekly = () => fetchJson<GdeltVarxWeekly[]>('gdelt_varx_weekly.json');

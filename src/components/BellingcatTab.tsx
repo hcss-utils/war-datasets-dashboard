@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  Brush,
 } from 'recharts';
 import {
   loadBellingcatDaily,
@@ -26,12 +27,51 @@ import type {
 
 const fmt = (n: number) => n.toLocaleString();
 
+const SOURCE_ID_MAP: Record<string, string> = {
+  'ACLED': 'acled',
+  'UCDP': 'ucdp',
+  'ACLED/UCDP': 'acled',
+  'VIINA': 'viina',
+  'Bellingcat': 'bellingcat',
+  'MDAA Tracker': 'mdaa',
+  'Ukraine MOD': 'equipment',
+  'DeepState': 'deepstate',
+  'OHCHR': 'ohchr',
+  'UNHCR': 'unhcr',
+  'HDX HAPI': 'hapi',
+};
+
+const SourceLink = ({ source }: { source: string }) => {
+  const sourceId = SOURCE_ID_MAP[source] || source.toLowerCase();
+  return (
+    <a
+      href={`#source-${sourceId}`}
+      className="source-link-inline"
+      onClick={(e) => {
+        e.preventDefault();
+        window.location.hash = 'sources';
+        setTimeout(() => {
+          const el = document.getElementById(`source-${sourceId}`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }}
+    >
+      ({source})
+    </a>
+  );
+};
+
 export default function BellingcatTab() {
   const [daily, setDaily] = useState<BellingcatDaily[]>([]);
   const [monthly, setMonthly] = useState<BellingcatMonthly[]>([]);
   const [incidents, setIncidents] = useState<BellingcatIncident[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
+
+  const handleLegendClick = (dataKey: string) => {
+    setSelectedSeries(prev => prev === dataKey ? null : dataKey);
+  };
 
   useEffect(() => {
     Promise.all([
@@ -102,8 +142,9 @@ export default function BellingcatTab() {
       </p>
 
       <div className="chart-card">
-        <h3>Daily Incidents (with 7-day Rolling Average)</h3>
-        <ResponsiveContainer width="100%" height={300}>
+        <h3>Daily Incidents (with 7-day Rolling Average) <SourceLink source="Bellingcat" /></h3>
+        <p className="chart-note">Drag the brush below to zoom. Click legend to filter series.</p>
+        <ResponsiveContainer width="100%" height={350}>
           <LineChart data={rollingData} margin={{ top: 10, right: 20, bottom: 30, left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
             <XAxis
@@ -120,7 +161,25 @@ export default function BellingcatTab() {
               contentStyle={{ background: '#1a1a2e', border: '1px solid #333', color: '#fff' }}
               labelFormatter={(d) => new Date(d).toLocaleDateString()}
             />
-            <Legend />
+            <Legend
+              onClick={(e) => handleLegendClick(e.dataKey as string)}
+              formatter={(value: string, entry: any) => (
+                <span style={{
+                  color: selectedSeries === null || selectedSeries === entry.dataKey ? '#fff' : '#666',
+                  fontWeight: selectedSeries === entry.dataKey ? 'bold' : 'normal',
+                  cursor: 'pointer'
+                }}>
+                  {value}
+                </span>
+              )}
+            />
+            <Brush
+              dataKey="date"
+              height={30}
+              stroke="#ef4444"
+              fill="#1a1a2e"
+              tickFormatter={(d) => new Date(d).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}
+            />
             <Line
               type="monotone"
               dataKey="incidents"
@@ -129,6 +188,7 @@ export default function BellingcatTab() {
               dot={false}
               strokeWidth={1}
               opacity={0.5}
+              hide={selectedSeries !== null && selectedSeries !== 'incidents'}
             />
             <Line
               type="monotone"
@@ -137,6 +197,7 @@ export default function BellingcatTab() {
               stroke="#ef4444"
               dot={false}
               strokeWidth={2}
+              hide={selectedSeries !== null && selectedSeries !== 'rolling_avg'}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -144,7 +205,7 @@ export default function BellingcatTab() {
 
       <div className="chart-grid-2">
         <div className="chart-card">
-          <h3>Monthly Incidents</h3>
+          <h3>Monthly Incidents <SourceLink source="Bellingcat" /></h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={monthly}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -169,7 +230,7 @@ export default function BellingcatTab() {
         </div>
 
         <div className="chart-card">
-          <h3>Cumulative Incidents Over Time</h3>
+          <h3>Cumulative Incidents Over Time <SourceLink source="Bellingcat" /></h3>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={cumulativeData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -204,7 +265,7 @@ export default function BellingcatTab() {
       </div>
 
       <div className="chart-card">
-        <h3>Recent Verified Incidents</h3>
+        <h3>Recent Verified Incidents <SourceLink source="Bellingcat" /></h3>
         <div className="incidents-table-container">
           <table className="incidents-table">
             <thead>

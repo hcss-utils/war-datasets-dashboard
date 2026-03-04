@@ -52,13 +52,84 @@ export interface DashboardMetadata {
   exportTimestamp: string;
 }
 
-export type TabId = 'overview' | 'conflict' | 'aerial' | 'threats' | 'losses' | 'economic' | 'sabotage' | 'humanitarian' | 'events' | 'map' | 'sources';
+export type TabId = 'overview' | 'conflict' | 'aerial' | 'losses' | 'humanitarian' | 'events' | 'map' | 'sources';
 
-// Subtab types for tabs with 2-level navigation
-export type ThreatsSubtab = 'events' | 'coercive' | 'redlines' | 'varx';
-export type EconomicSubtab = 'energy' | 'aid' | 'military';
-export type SabotageSubtab = 'cyber' | 'disinfo' | 'infrastructure' | 'hybrid';
-export type ConflictSubtab = 'acled' | 'ucdp' | 'viina' | 'bellingcat' | 'acled-hdx' | 'comparison';
+export type ConflictSubtab = 'acled' | 'ucdp' | 'viina' | 'bellingcat' | 'comparison' | 'threats';
+
+export type LossesSubtab = 'human' | 'equipment' | 'territory' | 'changes' | 'aid';
+
+// Filter types for aerial tab
+export type AerialAttackType = 'drones' | 'missiles';
+
+// Filter types for equipment/losses tabs
+export type OryxCountry = 'russia' | 'ukraine';
+export type OryxStatus = 'destroyed' | 'captured' | 'damaged' | 'abandoned';
+
+// Territory layer types
+export type TerritoryLayerType = 'russian_advances' | 'russian_claimed' | 'ukraine_control_map' | 'ukrainian_counteroffensives' | 'partisan_warfare';
+
+// KIU Officers data
+export interface KIUOfficersSummary {
+  total_officers: number;
+  senior_officers: number;
+  junior_officers: number;
+  other: number;
+}
+
+// Event type constants for filtering
+export const ACLED_EVENT_TYPES = [
+  'Battles',
+  'Explosions/Remote violence',
+  'Protests',
+  'Riots',
+  'Strategic developments',
+  'Violence against civilians',
+] as const;
+
+export const UCDP_VIOLENCE_TYPES = [
+  { id: 1, label: 'State-based' },
+  { id: 2, label: 'Non-state' },
+  { id: 3, label: 'One-sided' },
+] as const;
+
+export const VIINA_EVENT_CATEGORIES = [
+  'airstrike',
+  'artillery',
+  'UAV',
+  'firefight',
+  'control',
+  'raid',
+  'armor',
+  'IED',
+  'arrest',
+  'hospital',
+  'milcas',
+  'civcas',
+  'retreat',
+  'property',
+  'cyber',
+] as const;
+
+export const BELLINGCAT_IMPACT_TYPES = [
+  'Residential',
+  'Healthcare',
+  'Military',
+  'Industrial',
+  'Commercial',
+  'Cultural',
+  'Religious',
+  'School/childcare',
+  'Roads/Transport',
+  'Administrative',
+  'Food Infrastructure',
+  'Humanitarian',
+  'Undefined',
+] as const;
+
+export type ACLEDEventType = typeof ACLED_EVENT_TYPES[number];
+export type UCDPViolenceType = typeof UCDP_VIOLENCE_TYPES[number];
+export type ViinaEventCategory = typeof VIINA_EVENT_CATEGORIES[number];
+export type BellingcatImpactType = typeof BELLINGCAT_IMPACT_TYPES[number];
 
 // New data types for additional visualizations
 export interface OverviewStats {
@@ -75,15 +146,6 @@ export interface OverviewStats {
     total_personnel: number;
     ohchr_killed: number;
     ohchr_injured: number;
-    gdelt_threat_events?: number;
-    gdelt_coercive_records?: number;
-    gdelt_redline_records?: number;
-    gas_flow_records?: number;
-    fossil_revenue_records?: number;
-    eu_sanctions_entities?: number;
-    cyber_incidents?: number;
-    disinfo_cases?: number;
-    baltic_cable_incidents?: number;
   };
   date_ranges: {
     acled_start: string;
@@ -100,10 +162,6 @@ export interface OverviewStats {
     missiles_end: string;
     ohchr_start: string;
     ohchr_end: string;
-    gdelt_start?: string;
-    gdelt_end?: string;
-    gas_start?: string;
-    gas_end?: string;
   };
   export_timestamp: string;
 }
@@ -285,56 +343,219 @@ export interface BellingcatIncident {
   longitude: number;
 }
 
-// === GDELT Types ===
-export interface GdeltEventsDaily {
+// VIINA additional types for time unit switching
+export interface ViinaWeekly {
+  week: string;
+  events: number;
+}
+
+export interface ViinaWeeklyBySource {
+  week: string;
+  source: string;
+  events: number;
+}
+
+export interface ViinaDailyBySource {
   date: string;
+  source: string;
   events: number;
-  avg_goldstein: number;
-  total_mentions: number;
 }
 
-export interface GdeltEventsMonthly {
+// HAPI data types
+export interface HapiFoodPrice {
   month: string;
-  events: number;
-  avg_goldstein: number;
-  total_mentions: number;
+  commodity_name: string;
+  commodity_category: string;
+  avg_price: number;
+  records: number;
 }
 
-export interface GdeltEventsByTarget {
+export interface HapiIdps {
+  date: string;
+  oblast: string;
+  idps: number;
+}
+
+export interface HapiIdpsTotal {
+  date: string;
+  total_idps: number;
+}
+
+export interface HapiHumanitarianNeeds {
+  date: string;
+  oblast: string;
+  population_status: string;
+  population: number;
+}
+
+export interface HapiFunding {
+  date: string;
+  requirements_usd: number;
+  funding_usd: number;
+  funding_pct: number;
+}
+
+// Category breakdown types
+export interface UCDPByViolenceType {
+  type_of_violence: number;
+  violence_type_label: string;
+  events: number;
+  fatalities: number;
+}
+
+export interface UCDPMonthlyByType {
+  month: string;
+  type_of_violence: number;
+  violence_type_label: string;
+  events: number;
+  fatalities: number;
+}
+
+export interface BellingcatByImpact {
+  impact_type: string;
+  incidents: number;
+}
+
+export interface BellingcatMonthlyByImpact {
+  month: string;
+  impact_type: string;
+  incidents: number;
+}
+
+export interface ViinaByEventType {
+  event_type: string;
+  events: number;
+}
+
+export interface ViinaMonthlyByEventType {
+  month: string;
+  event_type: string;
+  events: number;
+}
+
+// Kiel Institute aid tracking types
+export interface KielAidByDonor {
+  donor: string;
+  aid_type_general: string;
+  commitments: number;
+  total_eur: number;
+}
+
+export interface KielAidTimeline {
+  month: string;
+  aid_type_general: string;
+  commitments: number;
+  total_eur: number;
+}
+
+export interface KielAidDonorTimeline {
+  month: string;
+  donor: string;
+  aid_type_general: string;
+  commitments: number;
+  total_eur: number;
+}
+
+// SIPRI military expenditure types
+export interface SipriExpenditure {
   country: string;
-  name: string;
+  year: number;
+  expenditure_usd: number;
+  gdp_share: number | null;
+}
+
+// World Bank GDP data
+export interface WorldBankGDP {
+  country: string;
+  year: number;
+  gdp_current_usd: number;
+}
+
+// Aid type filter
+export type AidType = 'Military' | 'Financial' | 'Humanitarian';
+
+// Donor countries for filter — Europe (All) first, United States second, rest alphabetical
+export const AID_DONORS = [
+  'Europe (All)',
+  'United States',
+  'Australia',
+  'Austria',
+  'Belgium',
+  'Bulgaria',
+  'Canada',
+  'China',
+  'Croatia',
+  'Cyprus',
+  'Czechia',
+  'Denmark',
+  'Estonia',
+  'EU (Commission and Council)',
+  'European Investment Bank',
+  'European Peace Facility',
+  'Finland',
+  'France',
+  'Germany',
+  'Greece',
+  'Hungary',
+  'Iceland',
+  'India',
+  'Ireland',
+  'Italy',
+  'Japan',
+  'Latvia',
+  'Lithuania',
+  'Luxembourg',
+  'Malta',
+  'Netherlands',
+  'New Zealand',
+  'Norway',
+  'Poland',
+  'Portugal',
+  'Romania',
+  'Slovakia',
+  'Slovenia',
+  'South Korea',
+  'Spain',
+  'Sweden',
+  'Switzerland',
+  'Taiwan',
+  'Turkiye',
+  'United Kingdom',
+] as const;
+
+// GDELT Threats data types
+export interface GdeltThreatsByDirection {
+  week: string;
+  direction: 'rus_outbound' | 'inbound_to_rus' | 'internal_rus' | 'other';
   events: number;
   avg_goldstein: number;
+  military_threats: number;
 }
 
-export interface GdeltGoldstein {
-  goldstein_bin: number;
-  count: number;
+export interface GdeltThreatsByCountry {
+  country: string;
+  rus_to_country: number;
+  country_to_rus: number;
+  avg_goldstein_out: number;
+  avg_goldstein_in: number;
 }
 
-export interface GdeltCoerciveDaily {
-  day: string;
-  records: number;
+export interface GdeltThreatsByCameo {
+  cameo_code: string;
+  events: number;
+  avg_goldstein: number;
+  label: string;
 }
 
-export interface GdeltCoerciveMonthly {
-  month: string;
-  records: number;
-}
-
-export interface GdeltCoerciveSource {
-  source: string;
-  count: number;
-}
-
-export interface GdeltRedlinesMonthly {
-  month: string;
-  records: number;
-}
-
-export interface GdeltRedlinesSource {
-  source: string;
-  count: number;
+export interface GdeltThreatsDyadic {
+  country_a: string;
+  country_b: string;
+  a_to_b_events: number;
+  b_to_a_events: number;
+  a_to_b_goldstein: number;
+  b_to_a_goldstein: number;
+  goldstein_asymmetry: number;
+  volume_asymmetry: number;
 }
 
 export interface GdeltVarxWeekly {
@@ -352,145 +573,15 @@ export interface GdeltVarxWeekly {
   escalation_quote_count: number;
   deter_quote_count: number;
   russia_share: number;
-  year: number;
-  week_of_year: number;
 }
 
-// === Economic Types ===
-export interface EnergyGasFlow {
-  date: string;
-  norway: number;
-  algeria: number;
-  russia: number;
-  azerbaijan: number;
-  libya: number;
-  uk_net_flows: number;
-  lng: number;
-  eu_total: number;
-  nord_stream: number;
-  ukraine_gas_transit: number;
-  yamal_by_pl: number;
-  turkstream: number;
-}
+// GDELT direction labels
+export const GDELT_DIRECTION_LABELS: Record<string, string> = {
+  rus_outbound: 'Russia \u2192 Others',
+  inbound_to_rus: 'Others \u2192 Russia',
+  internal_rus: 'Internal Russia',
+  other: 'Other',
+};
 
-export interface EnergyFossilRevenue {
-  month: string;
-  destination_region: string;
-  pricing_scenario_name: string;
-  total_eur: number;
-  total_usd: number;
-}
-
-export interface KielAidByDonor {
-  donor: string;
-  aid_type_general: string;
-  commitments: number;
-  total_eur: number;
-}
-
-export interface KielAidTimeline {
-  month: string;
-  aid_type_general: string;
-  commitments: number;
-  total_eur: number;
-}
-
-export interface SanctionsEuSummary {
-  schema_type: string;
-  count: number;
-}
-
-export interface SanctionsEuTimeline {
-  month: string;
-  schema_type: string;
-  count: number;
-}
-
-export interface SipriExpenditure {
-  country: string;
-  year: number;
-  expenditure_usd: number;
-}
-
-// === Sabotage & Disinfo Types ===
-export interface CyberIncidentTimeline {
-  month: string;
-  incidents: number;
-}
-
-export interface CyberIncidentByCountry {
-  country: string;
-  incidents: number;
-}
-
-export interface DisinfoMonthly {
-  month: string;
-  cases: number;
-}
-
-export interface DisinfoByLanguage {
-  language: string;
-  count: number;
-}
-
-export interface BalticCableIncident {
-  id: number;
-  incident_name: string;
-  incident_date: string;
-  vessel_name: string | null;
-  vessel_flag: string | null;
-  damage_description: string | null;
-  cables_affected: string[] | null;
-  source_url: string | null;
-  notes: string | null;
-}
-
-export interface LeidenHybridEvent {
-  id: number;
-  incident_year: number;
-  incident_month: string | null;
-  incident_date_start: string | null;
-  what: string;
-  where_location: string | null;
-  event_category: string | null;
-  event_category_2: string | null;
-  apparent_goal_1: string | null;
-  apparent_goal_2: string | null;
-  target_type: string | null;
-  target_type_2: string | null;
-}
-
-// === ACLED HDX Types ===
-export interface AcledHdxMonthly {
-  year: string;
-  month: string;
-  admin1: string;
-  events: number;
-  fatalities: number;
-  data_type: 'violence' | 'civilian' | 'demonstrations';
-}
-
-export interface AcledHdxByRegion {
-  admin1: string;
-  violence_events: number | null;
-  violence_fatalities: number | null;
-  civilian_events: number | null;
-  civilian_fatalities: number | null;
-  demonstration_events: number | null;
-}
-
-// === UCDP Types ===
-export interface UcdpByViolenceType {
-  type_of_violence: number;
-  violence_type_label: string;
-  events: number;
-  fatalities: number;
-}
-
-export interface UcdpMonthlyByType {
-  month: string;
-  type_of_violence: number;
-  violence_type_label: string;
-  events: number;
-  fatalities: number;
-}
+// GDELT threat filter types
+export type GdeltDirection = 'rus_outbound' | 'inbound_to_rus' | 'internal_rus' | 'other';

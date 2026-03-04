@@ -1,173 +1,226 @@
-# War Datasets Dashboard
+# Ukraine Territorial Control & Military Events Dashboard
 
-Interactive dashboard visualizing the Ukraine war through multiple data sources — conflict events, aerial assaults, threats & rhetoric, equipment losses, economic impact, sabotage & disinformation, humanitarian data, and territorial control.
+Interactive React dashboard visualizing Russian-controlled territory in Ukraine, military events, and Kursk region dynamics from ISW (Institute for the Study of War) assessment data stored in PostGIS.
 
-**Live site:** https://sdspieg.github.io/war-datasets-dashboard
+## Repository & Deployment
 
-## Tabs
+| Location | Path / URL |
+|----------|------------|
+| **GitHub** | https://github.com/sdspieg/war-datasets-dashboard.git |
+| **Live Site** | https://sdspieg.github.io/war-datasets-dashboard/ |
+| **Working Dir** | `/tmp/dashboard-build` (for builds) |
+| **Backup** | `C:\Apps\dashboard-build` (local hard drive) |
+| **Google Drive** | `G:\My Drive\RuBase\Red lines\Datasets\dashboard` |
 
-| Tab | Subtabs | Key Data |
-|-----|---------|----------|
-| **Overview** | — | KPI cards across all datasets with date ranges |
-| **Conflict Events** | ACLED · UCDP · VIINA · Bellingcat · ACLED HDX · Comparison | 224K ACLED events, 31K UCDP events, 557K VIINA events, 2.5K Bellingcat incidents |
-| **Aerial Assaults** | — | 1K+ attack waves, 88K missiles/drones launched, 70.7% intercept rate |
-| **Threats & Rhetoric** | Threat Events · Coercive Discourse · Red Lines · Escalation Index | 293K GDELT threat events, 360K coercive quotations, 8.7K red line quotations, weekly VARX index |
-| **Losses** | — | 1.26M personnel, 11.7K tanks, 435 aircraft (Ukraine MOD) |
-| **Economic Impact** | Energy · Aid & Sanctions · Military Spending | EU gas flows, Russia fossil revenue, Kiel aid tracker, EU sanctions, SIPRI expenditure |
-| **Sabotage & Disinfo** | Cyber Incidents · Disinformation · Infrastructure · Hybrid Events | 3.4K cyber incidents, 14.5K disinfo cases, Baltic cable incidents, Leiden hybrid events |
-| **Humanitarian** | — | OHCHR civilian casualties, UNHCR refugee data |
-| **Military Events** | — | ISW-based territory analysis with event scoring |
-| **Map** | — | Interactive territorial control map (DeepState + Kursk) |
+### Git Branches
 
-## Datasets
+| Branch | Contents |
+|--------|----------|
+| `main` | Source code (Plotly version with all features) |
+| `gh-pages` | Built `dist/` folder (auto-deployed to GitHub Pages) |
 
-| Source | Description | Records |
-|--------|-------------|---------|
-| [ACLED](https://acleddata.com/) | Armed Conflict Location & Event Data | 224K events |
-| [ACLED HDX](https://data.humdata.org/) | Regional aggregated conflict data (violence, civilian, demonstrations) | 41K records |
-| [UCDP GED](https://ucdp.uu.se/) | Uppsala Conflict Data Program | 31K events |
-| [VIINA 2.0](https://github.com/zhukovyuri/VIINA) | ML-classified news events from 16 outlets | 557K events |
-| [Bellingcat](https://ukraine.bellingcat.com/) | OSINT-verified civilian harm incidents | 2.5K incidents |
-| [GDELT](https://www.gdeltproject.org/) | Global threat events, coercive rhetoric, red line discourse | 664K records |
-| [Ukrainian MoD](https://www.mil.gov.ua/) | Equipment and personnel losses | 1.4K daily records |
-| [Missile Attacks DB](https://github.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset) | Missile/drone strikes with intercept rates | 3.3K records |
-| [OHCHR](https://www.ohchr.org/) | UN-verified civilian casualties | 71 monthly reports |
-| [UNHCR](https://www.unhcr.org/) | Refugee statistics and displacement | 56K records |
-| [Bruegel](https://www.bruegel.org/) | EU gas pipeline flows | 1.9K records |
-| [CREA](https://energyandcleanair.org/) | Russia fossil fuel revenue | 11.5K records |
-| [Kiel Institute](https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/) | Ukraine aid commitments by donor | 5.2K records |
-| [OpenSanctions](https://www.opensanctions.org/) | EU sanctions entities | 70.5K entities |
-| [SIPRI](https://www.sipri.org/) | Military expenditure by country | 8.3K records |
-| [EURepoC](https://eurepoc.eu/) | Cyber incidents (state-sponsored) | 3.4K incidents |
-| [EUvsDisinfo](https://euvsdisinfo.eu/) | Disinformation cases | 14.5K cases |
-| [Baltic Cable Incidents](https://en.wikipedia.org/wiki/Baltic_Sea_cable_sabotage) | Undersea cable sabotage events | 7 incidents |
-| [Leiden University](https://www.universiteitleiden.nl/) | Hybrid threat events | 153 events |
-| [DeepState](https://deepstatemap.live/) | Territorial control snapshots | 562 snapshots |
-| [ISW](https://www.understandingwar.org/) | Institute for the Study of War analysis | 2.8M features |
+### Google Drive Limitations & Workarounds
 
-## Project Structure
+Google Drive (mounted via rclone/FUSE) has several limitations:
+
+| Operation | Works? | Notes |
+|-----------|--------|-------|
+| `npm install` | **NO** | Symlinks not supported |
+| `cp -r` (many small files) | **SLOW** | Thousands of files = hours |
+| `rsync` | **NO** | Temp files fail with "Operation not permitted" |
+| `tar` copy + extract | **YES** | Single file transfer, then extract |
+| `git clone` | **NO** | Use worktree pattern instead |
+| File timestamps | **NO** | "Cannot utime" warnings (harmless) |
+
+**Recommended workflow:**
+
+```bash
+# 1. Work in /tmp or C:\Apps (fast local storage)
+cd /tmp/dashboard-build
+npm install
+npm run build
+
+# 2. Sync to Google Drive using tar (excludes node_modules)
+tar --exclude='node_modules' --exclude='.git' -cvf /tmp/dashboard.tar .
+cp /tmp/dashboard.tar "/mnt/g/My Drive/RuBase/Red lines/Datasets/"
+cd "/mnt/g/My Drive/RuBase/Red lines/Datasets/" && tar -xvf dashboard.tar -C dashboard/
+
+# 3. If you need node_modules on Google Drive (slow but works)
+cp -r /tmp/dashboard-build/node_modules "/mnt/g/.../dashboard/"  # Takes 30+ min
+```
+
+**Note:** The `.cache/gh-pages/` folder inside node_modules is just deployment cache - not needed. All actual data is in `public/data/`.
+
+## Architecture
 
 ```
-src/
-├── components/
-│   ├── OverviewTab.tsx
-│   ├── UnifiedConflictEventsTab.tsx
-│   ├── AerialAssaultsTab.tsx
-│   ├── ThreatsTab.tsx
-│   ├── EquipmentTab.tsx
-│   ├── EconomicTab.tsx
-│   ├── SabotageTab.tsx
-│   ├── HumanitarianTab.tsx
-│   ├── threats/          # Subtab panels (ThreatEvents, Coercive, RedLines, Escalation)
-│   ├── economic/         # Subtab panels (Energy, AidSanctions, MilitarySpending)
-│   ├── sabotage/         # Subtab panels (Cyber, Disinfo, Infrastructure, Hybrid)
-│   ├── conflict/         # Subtab panels (AcledHdx, SubtabNavigation)
-│   ├── charts/           # Chart components (Timeline, Heatmap, Radar, Scatter)
-│   └── map/              # Leaflet map components
-├── data/                 # Data loaders (newLoader.ts)
-├── context/              # React Context state management
-├── types/                # TypeScript interfaces
-└── styles/               # CSS
-
-public/data/              # JSON datasets (exported from PostgreSQL)
+dashboard/
+├── public/data/                ← Static JSON/GeoJSON exported from PostGIS
+│   ├── daily_areas.json        ← 3,601 daily area records
+│   ├── events.json             ← 39 scored military events
+│   ├── metadata.json           ← Date range, layer types, export stats
+│   ├── territory_geojson/      ← 39 GeoJSON files (ukraine_control_map change points)
+│   └── kursk_geojson/          ← 37 GeoJSON files (kursk_russian_advances change points)
+├── src/
+│   ├── App.tsx                 ← Root component: data loading, error boundaries, tab routing
+│   ├── main.tsx                ← React entry point
+│   ├── types/index.ts          ← TypeScript interfaces (DailyArea, MilitaryEvent, DashboardState)
+│   ├── data/
+│   │   ├── loader.ts           ← Fetch functions for JSON/GeoJSON files
+│   │   └── processing.ts       ← Interpolation, rolling median, monthly aggregation, trend
+│   ├── context/
+│   │   └── DashboardContext.tsx ← Global state via useReducer (date range, events, tab, etc.)
+│   ├── components/
+│   │   ├── Layout.tsx          ← CSS Grid layout: sidebar + header + main content
+│   │   ├── Sidebar.tsx         ← Date range slider, summary stats, interpolation toggle, event filter
+│   │   ├── TabNavigation.tsx   ← Territory | Events | Map tabs
+│   │   ├── DateRangeSlider.tsx ← Dual-handle date range selector
+│   │   ├── EventFilter.tsx     ← Grouped checkboxes by importance tier
+│   │   ├── charts/
+│   │   │   ├── TerritoryControlChart.tsx   ← Area chart: total Russian-controlled km²
+│   │   │   ├── MonthlyChangesChart.tsx     ← Bar chart: monthly net change (red/blue)
+│   │   │   ├── RateOfChangeChart.tsx       ← Dual-panel: territory + 30-day velocity
+│   │   │   ├── KurskChart.tsx              ← Kursk recapture with phase annotations
+│   │   │   ├── EventTimelineChart.tsx      ← Scatter: date × importance, size = territorial
+│   │   │   ├── EventHeatmap.tsx            ← Nivo heatmap: T/S/C per event
+│   │   │   ├── EventRadarChart.tsx         ← Nivo radar: top-N event profiles
+│   │   │   ├── EventScatterChart.tsx       ← Bubble: strategic × territorial, size = cascade
+│   │   │   ├── MetricDecomposition.tsx     ← Stacked horizontal bar: T/S/C decomposition
+│   │   │   └── shared/
+│   │   │       ├── EventOverlay.tsx        ← Vertical dashed reference lines for events
+│   │   │       ├── ChartTooltip.tsx        ← Styled tooltip with nearby event details
+│   │   │       └── ChartLegend.tsx         ← Consistent legend component
+│   │   └── map/
+│   │       ├── TerritoryMap.tsx            ← React-Leaflet + GeoJSON overlay
+│   │       ├── TimeSlider.tsx              ← Play/pause animation with speed controls
+│   │       └── MapLegend.tsx               ← Map legend overlay
+│   └── styles/
+│       ├── variables.css       ← CSS custom properties (dark theme palette)
+│       └── components.css      ← Full component styles, responsive breakpoints
+├── index.html
+├── package.json
+├── tsconfig.json
+└── vite.config.ts
 ```
 
 ## Tech Stack
 
-- React 18 + TypeScript
-- Vite
-- Recharts (charts)
-- Leaflet (maps)
-- GitHub Pages (deployment via gh-pages branch)
+| Layer        | Technology                                      |
+|--------------|--------------------------------------------------|
+| Framework    | Vite + React 18 + TypeScript                    |
+| Charts       | **Plotly.js** (drag-to-zoom) + Nivo (heatmap, radar) |
+| Map          | React-Leaflet + Leaflet + CARTO dark basemap    |
+| State        | React Context + useReducer                       |
+| Styling      | CSS custom properties, dark theme                |
+| Data         | Static JSON/GeoJSON (no backend server needed)   |
 
-## Changelog
+> **Note:** Originally built with Recharts, migrated to Plotly.js on 2026-01-31 for native drag-to-zoom functionality.
 
-### 2026-03-03 — Interactive Legend Toggle (All Charts)
+## Automated Daily Updates
 
-Added click-to-isolate interactivity to all ~20 multi-series charts. Click any legend item to show only that series; click again to restore all. Dual-pane charts (levels + rates) share toggle state.
+Data is updated automatically via a **GitHub Actions** workflow that runs daily at 6 AM UTC:
 
-- New `useSeriesToggle` hook (`src/hooks/useSeriesToggle.ts`) with optional group mapping for paired charts
-- **Conflict Events**: ACLED/UCDP events and fatalities dual-pane charts (4 legends)
-- **Aerial Assaults**: launched/intercepted, drones/missiles, weapon types (4 legends)
-- **Losses**: heavy equipment + rates, strategic air losses (3 legends)
-- **Humanitarian**: casualties + rates, region breakdown, refugee totals (4 legends)
-- **Energy**: pipeline flows, gas supply by source (2 legends)
-- **Military Spending**: 10 country lines (1 legend)
-- **ACLED HDX**: monthly events, regional breakdown (2 legends)
-- **Threat Events**: events + media mentions (1 legend)
-- **Military Events**: metric decomposition T/S/C bars (1 legend)
+1. **Detects changes** — queries 18 DB tables for `MAX(date)` + `COUNT(*)`, compares with stored metadata
+2. **Selectively exports** — only re-exports JSON files for datasets that changed
+3. **Builds & deploys** — runs `npm run build` and pushes `dist/` to gh-pages
 
-### 2026-03-03 — UI/UX Review Fixes
+If no data changed, the workflow exits early in ~21 seconds (no build, no deploy).
 
-Comprehensive fixes from reviewer audit addressing ~40 issues across all tabs.
+Full documentation: [`docs/DAILY_UPDATE_PIPELINE.md`](docs/DAILY_UPDATE_PIPELINE.md) (also at `G:\My Drive\RuBase\Red lines\Datasets\DAILY_UPDATE_PIPELINE.md`)
 
-**Global**
-- Extended color palette from 8 to 20 colors (`src/utils/colors.ts`) — eliminates duplicate colors in all bar/pie charts with >8 categories
-
-**Conflict Events**
-- UCDP lines now end at last real data point instead of dropping to zero (publication lag, not zero events)
-- Added ACLED vs UCDP methodology note (fatality threshold, publication cadence, event scope)
-- Pie chart filters out <1% event types to reduce noise
-- Events rate Y-axis clamped to [-200, 200] to prevent single spikes from squashing all data
-- Added UCDP batch reporting note for fatalities chart
-
-**ACLED HDX**
-- Fixed chart title: "Events by Type" (was "Violence Events & Fatalities" — no fatalities column exists)
-- Fixed X-axis label crowding with `interval="preserveStartEnd"`
-
-**VIINA**
-- Oblast names normalized to Ukrainian: Kyiv (was Kiev), Odesa (was Odessa), Zaporizhzhia (was Zaporizhzhya)
-
-**Aerial Assaults**
-- Intercept rate bars sorted by rate descending (was alphabetical)
-- Bars color-coded by weapon category: ballistic (red), cruise (blue), drone (orange)
-- "Молнія" transliterated to "Molniya (drone)"
-- Added color legend note
-
-**Threats & Rhetoric**
-- GDELT target countries merged: UKRAINE/UKRAINIAN/CRIMEA/KYIV → UKR, RUSSIA/RUSSIAN/PUTIN/MOSCOW → RUS, etc.
-- All three subtab panels (ThreatEvents, Coercive, RedLines) use 20-color palette
-
-**Losses**
-- Split "Cumulative Air Losses" into two charts: "Strategic Air Losses" (Aircraft + Helicopters) and "Drone Losses" — drones at 160K were squashing aircraft/helicopters at ~400
-- Daily tank chart title shows 180-day total
-
-**Economic Impact**
-- Gas chart title: "by Source" (was "by Source Country" — LNG is not a country)
-- Added LNG explanation note and Yamal pipeline status note (near zero since May 2022)
-
-**Aid & Sanctions**
-- Sanctions entity types humanized: "PublicBody" → "Public Body", "LegalEntity" → "Legal Entity"
-- Sanctions pie chart filters <1% entity types
-- Donor bar chart uses 20-color palette
-
-**Sabotage & Disinfo**
-- Cyber: merged "Unknown;Unknown"/"unknown" variants into single "Unknown" entry
-- Infrastructure: added summary stats card (total incidents + date range), incidents grouped by year
-- Hybrid: added "Events may appear in multiple categories" note, year bar labels added
-- All subtab panels use 20-color palette
-
-**Humanitarian**
-- Casualty chart X-axis interval reduced (was showing every month tick)
-- Added prominent OHCHR caveat: verified figures are confirmed minimums
-- Added labels on asylum seekers bars for readability
-
-**Map**
-- Added "Source: DeepState Map" attribution overlay
-
-## Development
+### Manual trigger
 
 ```bash
+gh workflow run daily-update.yml
+gh run list --workflow=daily-update.yml --limit 3
+```
+
+### Manual data export (local)
+
+```bash
+# Full export against remote DB
+DB_HOST=138.201.62.161 DB_PORT=5432 DB_NAME=war_datasets \
+DB_USER=postgres DB_PASSWORD=<password> OUTPUT_DIR=public/data \
+python scripts/export_all_dashboard_data.py
+
+# Selective export (only specific datasets)
+CHANGED_KEYS=missiles,equipment python scripts/export_changed.py
+```
+
+## Prerequisites
+
+- **Node.js** >= 18
+- **Python 3** with `psycopg2` (for data export only)
+- **PostgreSQL database** — remote at `138.201.62.161:5432` (`war_datasets`) or local Docker at `localhost:5433` (`russian_ukrainian_war`)
+
+## Local Development
+
+```bash
+cd /mnt/c/Apps/dashboard-build  # or /tmp/dashboard-build
 npm install
 npm run dev
 ```
 
-## Data Export
-
-Data is exported from a PostgreSQL database using:
+## Build for Production
 
 ```bash
-python export_all_dashboard_data.py
+npm run build
+# Output: dist/ folder (fully self-contained static site)
 ```
 
-This generates ~80 JSON files in `public/data/` from schemas: `conflict_data`, `global_events`, `economic_data`, `western_sabotage`, `casualties`, and others.
+## Deployment
+
+The live site is deployed via **GitHub Pages** from the `gh-pages` branch. Deployments happen automatically via the daily update workflow, or can be triggered manually.
+
+For ad-hoc deployment alternatives (Cloudflare tunnel, Netlify, Vercel), see the [TECH_STACK.md](TECH_STACK.md).
+
+## Dashboard Features
+
+### Territory Tab (4 charts)
+- **Russian-Controlled Territory** — Area chart with interpolated data, linear trend line, event overlay markers
+- **Monthly Territorial Changes** — Bar chart with red (Russian gains) / blue (Ukrainian gains), average line, stats overlay
+- **Rate of Territorial Change** — Dual-panel: territory area + 30-day rolling velocity (km²/month)
+- **Kursk Region** — Russian recapture progress with 5 phase annotations
+
+### Events Tab (5 charts)
+- **Event Importance Timeline** — Scatter plot: date × importance, bubble size = territorial impact, opacity = confidence
+- **Event Metric Heatmap** — Nivo heatmap: Territorial/Strategic/Cascade scores per event
+- **Event Radar Profiles** — Nivo radar: top-N events overlaid on T/S/C axes
+- **Strategic vs Territorial** — Bubble scatter: strategic × territorial, size = cascade, color = importance
+- **Metric Decomposition** — Stacked horizontal bars: T/S/C breakdown per event, sorted by importance
+
+### Map Tab
+- **Interactive Leaflet map** centered on eastern Ukraine (48.5°N, 37.5°E)
+- **CARTO dark basemap** with semi-transparent red GeoJSON polygons
+- **Time slider** with play/pause, speed controls (1 day/s, 1 week/s, 1 month/s)
+- **Legend** showing current date and loading state
+
+### Cross-chart Interactions
+- **Date range filtering** — Sidebar sliders filter all charts simultaneously
+- **Event selection** — Checkbox groups (Critical I>=8, Significant I>=6, Other) toggle event overlays
+- **Interpolation toggle** — Switch between raw step-function and interpolated data
+- **Event highlighting** — Click an event on any chart to highlight it (via shared context)
+- **URL hash sync** — Active tab encoded in URL hash for shareable links
+- **Error boundaries** — Each chart wrapped in React error boundary with retry button
+
+## Database Schema Reference
+
+| Table/View           | Purpose                                              |
+|----------------------|------------------------------------------------------|
+| `clean_daily_areas`  | View: daily area totals per layer_type per conflict  |
+| `shapefile_metadata` | Source shapefile metadata (date, type, conflict)     |
+| `control_polygons`   | Polygon geometries with metadata_id foreign key      |
+
+### Ukraine layer types
+`ukraine_control_map`, `russian_advances`, `kursk_russian_advances`, `partisan_warfare`, `russian_claimed`, `russian_infiltration`, `ukraine_other`, `ukrainian_counteroffensives`
+
+## Military Events (39 total)
+
+Events are scored on three axes (0–4 each):
+- **T (Territorial)** — Direct territorial impact
+- **S (Strategic)** — Strategic significance
+- **C (Cascade)** — Cascading/downstream effects
+
+**Importance** = sum-based score (1–10). **Confidence** = High/Medium/Low.
+
+Key events include: Avdiivka Falls (I=9), Pokrovsk Offensive (I=9), Luhansk Fully Captured (I=9), Op. Spiderweb (I=9), Vuhledar Falls (I=8), Kharkiv Offensive (I=8), Kursk Incursion (I=8), Chasiv Yar Falls (I=8), Toretsk Falls (I=8), Kupiansk Offensive (I=8), Dobropillia UKR Victory (I=8).

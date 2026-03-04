@@ -1,11 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DashboardProvider, useDashboard } from './context/DashboardContext';
 import { loadDailyAreas, loadEvents, loadMetadata } from './data/loader';
 import Layout from './components/Layout';
-import TerritoryControlChart from './components/charts/TerritoryControlChart';
-import MonthlyChangesChart from './components/charts/MonthlyChangesChart';
-import RateOfChangeChart from './components/charts/RateOfChangeChart';
-import KurskChart from './components/charts/KurskChart';
 import EventTimelineChart from './components/charts/EventTimelineChart';
 import EventHeatmap from './components/charts/EventHeatmap';
 import EventRadarChart from './components/charts/EventRadarChart';
@@ -14,13 +10,10 @@ import MetricDecomposition from './components/charts/MetricDecomposition';
 import SourcesTab from './components/SourcesTab';
 import OverviewTab from './components/OverviewTab';
 import UnifiedConflictEventsTab from './components/UnifiedConflictEventsTab';
-import AerialAssaultsTab from './components/AerialAssaultsTab';
-import EquipmentTab from './components/EquipmentTab';
-import HumanitarianTab from './components/HumanitarianTab';
-import ThreatsTab from './components/ThreatsTab';
-import EconomicTab from './components/EconomicTab';
-import SabotageTab from './components/SabotageTab';
-import type { DailyArea, MilitaryEvent, DashboardMetadata, TabId } from './types';
+import UnifiedAerialTab from './components/UnifiedAerialTab';
+import UnifiedLossesTab from './components/UnifiedLossesTab';
+import HumanitarianTabPlotly from './components/HumanitarianTabPlotly';
+import type { DailyArea, MilitaryEvent, DashboardMetadata } from './types';
 
 // Lazy-load the map to avoid SSR issues with Leaflet
 const TerritoryMap = React.lazy(() => import('./components/map/TerritoryMap'));
@@ -45,8 +38,6 @@ class ChartErrorBoundary extends React.Component<{ children: React.ReactNode; na
     return this.props.children;
   }
 }
-
-const VALID_TABS: TabId[] = ['overview', 'conflict', 'aerial', 'threats', 'losses', 'economic', 'sabotage', 'humanitarian', 'events', 'map', 'sources'];
 
 // ---- Dashboard Content (inside provider) ----
 function DashboardContent() {
@@ -98,6 +89,8 @@ function DashboardContent() {
   // Load territory GeoJSON date list from metadata
   useEffect(() => {
     if (!metadata) return;
+    // Fetch the list of available GeoJSON files from the territory directory
+    // We'll derive dates from the daily areas data by finding change points
     const controlData = dailyAreas
       .filter((d) => d.layerType === 'ukraine_control_map')
       .sort((a, b) => a.date.localeCompare(b.date));
@@ -113,16 +106,46 @@ function DashboardContent() {
     setTerritoryDates(dates);
   }, [dailyAreas, metadata]);
 
-  // URL hash sync
+  // URL hash sync with support for deep linking to sources (e.g., #sources-viina) and conflict subtabs (e.g., #conflict-viina)
   useEffect(() => {
-    const hash = window.location.hash.substring(1);
-    if (VALID_TABS.includes(hash as TabId)) {
-      dispatch({ type: 'SET_TAB', payload: hash as TabId });
-    }
+    const handleHashChange = () => {
+      const hash = window.location.hash.substring(1);
+      const validTabs = ['overview', 'conflict', 'aerial', 'losses', 'humanitarian', 'events', 'map', 'sources'];
+
+      // Check for deep link to specific source (format: #sources-{sourceId})
+      if (hash.startsWith('sources-')) {
+        const sourceId = hash.substring(8); // Remove 'sources-' prefix
+        dispatch({ type: 'SET_TAB', payload: 'sources' as any });
+        // Wait for tab to render, then scroll to source
+        setTimeout(() => {
+          const el = document.getElementById(`source-${sourceId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('source-highlight');
+            setTimeout(() => el.classList.remove('source-highlight'), 3000);
+          }
+        }, 150);
+      } else if (hash.startsWith('conflict-')) {
+        // Deep link to conflict subtab (handled by UnifiedConflictEventsTab)
+        dispatch({ type: 'SET_TAB', payload: 'conflict' as any });
+      } else if (hash.startsWith('losses-')) {
+        // Deep link to losses subtab (handled by UnifiedLossesTab)
+        dispatch({ type: 'SET_TAB', payload: 'losses' as any });
+      } else if (validTabs.includes(hash)) {
+        dispatch({ type: 'SET_TAB', payload: hash as any });
+      }
+    };
+
+    handleHashChange(); // Handle initial load
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, [dispatch]);
 
   useEffect(() => {
-    window.location.hash = state.activeTab;
+    // Only update hash for simple tab switches (not deep links)
+    if (!window.location.hash.includes('-')) {
+      window.location.hash = state.activeTab;
+    }
   }, [state.activeTab]);
 
   // Loading state
@@ -165,37 +188,19 @@ function DashboardContent() {
 
       {state.activeTab === 'aerial' && (
         <ChartErrorBoundary name="Aerial Assaults">
-          <AerialAssaultsTab />
-        </ChartErrorBoundary>
-      )}
-
-      {state.activeTab === 'threats' && (
-        <ChartErrorBoundary name="Threats & Rhetoric">
-          <ThreatsTab />
+          <UnifiedAerialTab />
         </ChartErrorBoundary>
       )}
 
       {state.activeTab === 'losses' && (
-        <ChartErrorBoundary name="Losses">
-          <EquipmentTab />
-        </ChartErrorBoundary>
-      )}
-
-      {state.activeTab === 'economic' && (
-        <ChartErrorBoundary name="Economic Impact">
-          <EconomicTab />
-        </ChartErrorBoundary>
-      )}
-
-      {state.activeTab === 'sabotage' && (
-        <ChartErrorBoundary name="Sabotage & Disinfo">
-          <SabotageTab />
+        <ChartErrorBoundary name="Gains/Losses">
+          <UnifiedLossesTab />
         </ChartErrorBoundary>
       )}
 
       {state.activeTab === 'humanitarian' && (
         <ChartErrorBoundary name="Humanitarian">
-          <HumanitarianTab />
+          <HumanitarianTabPlotly />
         </ChartErrorBoundary>
       )}
 

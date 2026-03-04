@@ -5,7 +5,6 @@ import {
 } from 'recharts';
 import { useDashboard } from '../../context/DashboardContext';
 import { getEventColor } from './shared/EventOverlay';
-import { ImpactScoresInfo } from '../InfoModal';
 import type { MilitaryEvent } from '../../types';
 
 interface Props {
@@ -37,10 +36,7 @@ export default function EventScatterChart({ events }: Props) {
 
   return (
     <div className="chart-card">
-      <div className="chart-card-header">
-        <h2>Strategic vs Territorial Impact</h2>
-        <ImpactScoresInfo />
-      </div>
+      <h2>Strategic vs Territorial Impact</h2>
       <p className="subtitle">Bubble size = cascade score, color = importance</p>
       <ResponsiveContainer width="100%" height={350}>
         <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>

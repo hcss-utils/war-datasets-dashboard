@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import { useDashboard } from '../../context/DashboardContext';
 import { loadTerritoryGeoJSON } from '../../data/loader';
@@ -21,20 +21,12 @@ export default function TerritoryMap({ dailyAreas, availableDates }: Props) {
   const [speed, setSpeed] = useState(1000); // ms per step
   const timerRef = useRef<number | null>(null);
 
-  // Filter available dates to current date range (memoized to prevent unnecessary re-renders)
-  const filteredDates = useMemo(() => {
+  // Filter available dates to current date range
+  const filteredDates = availableDates.filter((d) => {
     const startStr = state.dateRange[0].toISOString().substring(0, 10);
     const endStr = state.dateRange[1].toISOString().substring(0, 10);
-    return availableDates.filter((d) => d >= startStr && d <= endStr);
-  }, [availableDates, state.dateRange]);
-
-  // Reset currentDate when it falls outside the filtered range
-  useEffect(() => {
-    if (filteredDates.length > 0 && !filteredDates.includes(currentDate)) {
-      setCurrentDate(filteredDates[0]);
-      setPlaying(false);
-    }
-  }, [filteredDates, currentDate]);
+    return d >= startStr && d <= endStr;
+  });
 
   // Load GeoJSON when date changes
   useEffect(() => {
@@ -103,7 +95,6 @@ export default function TerritoryMap({ dailyAreas, availableDates }: Props) {
           )}
         </MapContainer>
         <MapLegend currentDate={currentDate} loading={loading} />
-        <div style={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.6)', color: '#ccc', padding: '2px 8px', borderRadius: 4, fontSize: 11, zIndex: 1000 }}>Source: DeepState Map</div>
       </div>
       <div className="map-controls">
         <TimeSlider

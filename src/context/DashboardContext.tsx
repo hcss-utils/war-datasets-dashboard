@@ -4,25 +4,16 @@ import type { DashboardState, DashboardAction } from '../types';
 const DEFAULT_START = new Date('2023-11-01');
 const DEFAULT_END = new Date('2026-01-26');
 
-const VALID_TABS: import('../types').TabId[] = ['overview', 'conflict', 'aerial', 'threats', 'losses', 'economic', 'sabotage', 'humanitarian', 'events', 'map', 'sources'];
-
-function createInitialState(): DashboardState {
-  const rawHash = typeof window !== 'undefined' ? window.location.hash : '';
-  const hash = rawHash.replace(/^#/, '');
-  const activeTab = VALID_TABS.includes(hash as import('../types').TabId)
-    ? (hash as import('../types').TabId)
-    : 'overview';
-  return {
-    dateRange: [DEFAULT_START, DEFAULT_END],
-    fullDateRange: [DEFAULT_START, DEFAULT_END],
-    selectedEvents: [],
-    activeTab,
-    showInterpolation: true,
-    highlightedEvent: null,
-    isLoading: true,
-    error: null,
-  };
-}
+const initialState: DashboardState = {
+  dateRange: [DEFAULT_START, DEFAULT_END],
+  fullDateRange: [DEFAULT_START, DEFAULT_END],
+  selectedEvents: [],
+  activeTab: 'overview',
+  showInterpolation: true,
+  highlightedEvent: null,
+  isLoading: true,
+  error: null,
+};
 
 function reducer(state: DashboardState, action: DashboardAction): DashboardState {
   switch (action.type) {
@@ -62,7 +53,7 @@ interface DashboardContextValue {
 const DashboardContext = createContext<DashboardContextValue | null>(null);
 
 export function DashboardProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, undefined, createInitialState);
+  const [state, dispatch] = useReducer(reducer, initialState);
   return (
     <DashboardContext.Provider value={{ state, dispatch }}>
       {children}

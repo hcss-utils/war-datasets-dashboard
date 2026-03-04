@@ -154,68 +154,6 @@ export default function OverviewTab() {
             </div>
           </div>
         </div>
-
-        {totals.gdelt_threat_events != null && (
-          <div className="stat-section">
-            <h3>Threats &amp; Rhetoric <span className="chart-source">(GDELT)</span></h3>
-            <div className="stat-cards">
-              <div className="stat-card">
-                <span className="stat-value">{formatNumber(totals.gdelt_threat_events)}</span>
-                <span className="stat-label">Threat Events</span>
-                <span className="stat-date-range">{formatDateRange(date_ranges.gdelt_start, date_ranges.gdelt_end)}</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-value">{formatNumber(totals.gdelt_coercive_records || 0)}</span>
-                <span className="stat-label">Coercive Quotations</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-value">{formatNumber(totals.gdelt_redline_records || 0)}</span>
-                <span className="stat-label">Red Line Quotations</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {totals.gas_flow_records != null && (
-          <div className="stat-section">
-            <h3>Economic Impact</h3>
-            <div className="stat-cards">
-              <div className="stat-card">
-                <span className="stat-value">{formatNumber(totals.gas_flow_records)}</span>
-                <span className="stat-label">Gas Flow Records</span>
-                <span className="stat-date-range">{formatDateRange(date_ranges.gas_start, date_ranges.gas_end)}</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-value">{formatNumber(totals.eu_sanctions_entities || 0)}</span>
-                <span className="stat-label">EU Sanctions Entities</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-value">{formatNumber(totals.fossil_revenue_records || 0)}</span>
-                <span className="stat-label">Fossil Revenue Records</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {totals.cyber_incidents != null && (
-          <div className="stat-section">
-            <h3>Sabotage &amp; Disinformation</h3>
-            <div className="stat-cards">
-              <div className="stat-card">
-                <span className="stat-value">{formatNumber(totals.cyber_incidents)}</span>
-                <span className="stat-label">Cyber Incidents</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-value">{formatNumber(totals.disinfo_cases || 0)}</span>
-                <span className="stat-label">Disinfo Cases</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-value">{formatNumber(totals.baltic_cable_incidents || 0)}</span>
-                <span className="stat-label">Baltic Cable Incidents</span>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="data-coverage">
@@ -272,54 +210,6 @@ export default function OverviewTab() {
               <td>{formatDate(date_ranges.ohchr_start)}</td>
               <td>{formatDate(date_ranges.ohchr_end)}</td>
             </tr>
-            {date_ranges.gdelt_start && (
-              <tr>
-                <td>GDELT Threat Events</td>
-                <td>GDELT Project</td>
-                <td>{formatDate(date_ranges.gdelt_start)}</td>
-                <td>{formatDate(date_ranges.gdelt_end)}</td>
-              </tr>
-            )}
-            {date_ranges.gas_start && (
-              <>
-                <tr>
-                  <td>EU Gas Flows</td>
-                  <td>Bruegel</td>
-                  <td>{formatDate(date_ranges.gas_start)}</td>
-                  <td>{formatDate(date_ranges.gas_end)}</td>
-                </tr>
-                <tr>
-                  <td>Russia Fossil Revenue</td>
-                  <td>CREA</td>
-                  <td colSpan={2}>See Economic tab</td>
-                </tr>
-                <tr>
-                  <td>Ukraine Aid</td>
-                  <td>Kiel Institute</td>
-                  <td colSpan={2}>See Economic tab</td>
-                </tr>
-                <tr>
-                  <td>EU Sanctions</td>
-                  <td>OpenSanctions</td>
-                  <td colSpan={2}>See Economic tab</td>
-                </tr>
-                <tr>
-                  <td>Military Expenditure</td>
-                  <td>SIPRI</td>
-                  <td colSpan={2}>See Economic tab</td>
-                </tr>
-                <tr>
-                  <td>Cyber Incidents</td>
-                  <td>EURepoC</td>
-                  <td colSpan={2}>See Sabotage tab</td>
-                </tr>
-                <tr>
-                  <td>Disinformation Cases</td>
-                  <td>EUvsDisinfo</td>
-                  <td colSpan={2}>See Sabotage tab</td>
-                </tr>
-              </>
-            )}
           </tbody>
         </table>
       </div>

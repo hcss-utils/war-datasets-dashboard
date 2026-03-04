@@ -2,6 +2,7 @@ import React from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import Sidebar from './Sidebar';
 import TabNavigation from './TabNavigation';
+import DateRangeFilter from './DateRangeFilter';
 import type { DailyArea, MilitaryEvent } from '../types';
 
 interface LayoutProps {
@@ -47,6 +48,7 @@ export default function Layout({ dailyAreas, events, children }: LayoutProps) {
       )}
       <div className="app-main">
         <TabNavigation />
+        <DateRangeFilter />
         <div className="tab-content">
           {children}
         </div>

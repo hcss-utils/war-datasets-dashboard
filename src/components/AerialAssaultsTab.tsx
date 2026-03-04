@@ -15,35 +15,56 @@ import {
   Cell,
   ReferenceLine,
   LabelList,
+  Brush,
 } from 'recharts';
 import { loadDailyAerialThreats, loadWeaponTypes } from '../data/newLoader';
 import type { DailyAerialThreat, WeaponTypeSummary } from '../types';
 import { CorrelationInfo, DualPaneInfo } from './InfoModal';
-import { useSeriesToggle } from '../hooks/useSeriesToggle';
 
 // Format number with thousands separators
 const fmt = (n: number) => n.toLocaleString();
 
-const WEAPON_CATEGORY: Record<string, string> = {
-  'Shahed-136/131': 'drone', 'Shahed/other drones': 'drone',
-  'Iskander-M': 'ballistic', 'Iskander-K': 'cruise',
-  'X-101/X-555': 'cruise', 'Kalibr': 'cruise', 'Kalibr (cruise)': 'cruise',
-  'Kinzhal': 'ballistic', 'X-22/X-32': 'cruise',
-  'X-59/X-69': 'cruise', 'X-59': 'cruise', 'Zircon': 'ballistic',
-  'S-300/S-400': 'ballistic', 'KN-23/KN-24': 'ballistic',
-  'C-300': 'ballistic', 'Iskander-M/KN-23': 'ballistic',
-  'Lancet': 'drone', 'Orlan-10': 'drone', 'ZALA': 'drone',
-  'Reconnaissance UAV': 'drone', 'Unknown UAV': 'drone',
-  'X-101/X-555 and Kalibr': 'cruise',
-  '\u041C\u043E\u043B\u043D\u0456\u044F': 'drone',
-};
-const CATEGORY_COLORS: Record<string, string> = {
-  ballistic: '#ef4444', cruise: '#3b82f6', drone: '#f97316', other: '#888888',
+const SOURCE_ID_MAP: Record<string, string> = {
+  'ACLED': 'acled',
+  'UCDP': 'ucdp',
+  'ACLED/UCDP': 'acled',
+  'VIINA': 'viina',
+  'Bellingcat': 'bellingcat',
+  'MDAA Tracker': 'mdaa',
+  'Ukraine MOD': 'equipment',
+  'DeepState': 'deepstate',
+  'OHCHR': 'ohchr',
+  'UNHCR': 'unhcr',
+  'HDX HAPI': 'hapi',
 };
 
-const WEAPON_DISPLAY: Record<string, string> = {
-  '\u041C\u043E\u043B\u043D\u0456\u044F': 'Molniya (drone)',
+const SourceLink = ({ source }: { source: string }) => {
+  const sourceId = SOURCE_ID_MAP[source] || source.toLowerCase();
+  return (
+    <a
+      href={`#source-${sourceId}`}
+      className="source-link-inline"
+      onClick={(e) => {
+        e.preventDefault();
+        window.location.hash = 'sources';
+        setTimeout(() => {
+          const el = document.getElementById(`source-${sourceId}`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }}
+    >
+      ({source})
+    </a>
+  );
 };
+
+// Tab20 color palette for distinctive bar colors
+const TAB20_COLORS = [
+  '#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
+  '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5',
+  '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
+  '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5',
+];
 
 // Calculate Pearson correlation coefficient
 function pearsonCorrelation(x: number[], y: number[]): number {
@@ -59,19 +80,20 @@ function pearsonCorrelation(x: number[], y: number[]): number {
   return denominator === 0 ? 0 : numerator / denominator;
 }
 
-const THREAT_GROUPS: Record<string, string> = {
-  avg_launched: 'launched', avg_destroyed: 'intercepted',
-  launched_rate: 'launched', destroyed_rate: 'intercepted',
-};
-
 export default function AerialAssaultsTab() {
   const [dailyThreats, setDailyThreats] = useState<DailyAerialThreat[]>([]);
   const [weaponTypes, setWeaponTypes] = useState<WeaponTypeSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const threatToggle = useSeriesToggle(THREAT_GROUPS);
-  const droneToggle = useSeriesToggle();
-  const weaponToggle = useSeriesToggle();
+  const [selectedThreatSeries, setSelectedThreatSeries] = useState<string | null>(null);
+  const [selectedTypeSeries, setSelectedTypeSeries] = useState<string | null>(null);
+
+  const handleThreatLegendClick = (dataKey: string) => {
+    setSelectedThreatSeries(prev => prev === dataKey ? null : dataKey);
+  };
+  const handleTypeLegendClick = (dataKey: string) => {
+    setSelectedTypeSeries(prev => prev === dataKey ? null : dataKey);
+  };
 
   useEffect(() => {
     Promise.all([loadDailyAerialThreats(), loadWeaponTypes()])
@@ -136,15 +158,11 @@ export default function AerialAssaultsTab() {
     };
   });
 
-  // Top weapons by launch count (with display name mapping, preserving original for category lookup)
-  const topWeapons = weaponTypes
-    .filter((w) => w.total_launched > 50)
-    .slice(0, 15)
-    .map(w => ({ ...w, originalModel: w.model, model: WEAPON_DISPLAY[w.model] || w.model }));
+  // Top weapons by launch count
+  const topWeapons = weaponTypes.filter((w) => w.total_launched > 50).slice(0, 15);
 
-  // Weapons sorted by intercept rate (descending) for intercept rate chart
-  const weaponsSortedByRate = [...topWeapons]
-    .sort((a, b) => b.intercept_rate - a.intercept_rate);
+  // Weapons sorted alphabetically for intercept rate chart
+  const weaponsSortedAlpha = [...topWeapons].sort((a, b) => a.model.localeCompare(b.model));
 
   // Calculate totals
   const totalLaunched = dailyThreats.reduce((s, d) => s + d.total_launched, 0);
@@ -191,7 +209,7 @@ export default function AerialAssaultsTab() {
       </div>
 
       <div className="chart-card">
-        <h3>Daily Aerial Threats (7-day Rolling Average) <DualPaneInfo /></h3>
+        <h3>Daily Aerial Threats (7-day Rolling Average) <SourceLink source="MDAA Tracker" /> <DualPaneInfo /></h3>
         <p className="chart-note">Top: Daily counts | Bottom: 7-day rate of change (%)</p>
         <div className="correlation-stats">
           <div className="corr-stat">
@@ -215,9 +233,20 @@ export default function AerialAssaultsTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number, name: string) => [fmt(value), name]}
               />
-              <Legend onClick={(e: any) => threatToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: threatToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
-              <Line type="monotone" dataKey="avg_launched" name="Launched (7d avg)" stroke="#ef4444" dot={false} strokeWidth={1.5} hide={!threatToggle.isVisible('avg_launched')} />
-              <Line type="monotone" dataKey="avg_destroyed" name="Intercepted (7d avg)" stroke="#22c55e" dot={false} strokeWidth={1.5} hide={!threatToggle.isVisible('avg_destroyed')} />
+              <Legend
+                onClick={(e) => handleThreatLegendClick(e.dataKey as string)}
+                formatter={(value: string, entry: any) => (
+                  <span style={{
+                    color: selectedThreatSeries === null || selectedThreatSeries === entry.dataKey ? '#fff' : '#666',
+                    fontWeight: selectedThreatSeries === entry.dataKey ? 'bold' : 'normal',
+                    cursor: 'pointer'
+                  }}>
+                    {value}
+                  </span>
+                )}
+              />
+              <Line type="monotone" dataKey="avg_launched" name="Launched (7d avg)" stroke="#ef4444" dot={false} strokeWidth={1.5} hide={selectedThreatSeries !== null && selectedThreatSeries !== 'avg_launched'} />
+              <Line type="monotone" dataKey="avg_destroyed" name="Intercepted (7d avg)" stroke="#22c55e" dot={false} strokeWidth={1.5} hide={selectedThreatSeries !== null && selectedThreatSeries !== 'avg_destroyed'} />
             </LineChart>
           </ResponsiveContainer>
           <ResponsiveContainer width="100%" height={200}>
@@ -239,10 +268,10 @@ export default function AerialAssaultsTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]}
               />
-              <Legend onClick={(e: any) => threatToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: threatToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+              <Legend />
               <ReferenceLine y={0} stroke="#888" />
-              <Line type="monotone" dataKey="launched_rate" name="Launched Rate" stroke="#ef4444" dot={false} strokeWidth={1.5} hide={!threatToggle.isVisible('launched_rate')} />
-              <Line type="monotone" dataKey="destroyed_rate" name="Intercepted Rate" stroke="#22c55e" dot={false} strokeWidth={1.5} hide={!threatToggle.isVisible('destroyed_rate')} />
+              <Line type="monotone" dataKey="launched_rate" name="Launched Rate" stroke="#ef4444" dot={false} strokeWidth={1.5} hide={selectedThreatSeries !== null && selectedThreatSeries !== 'avg_launched'} />
+              <Line type="monotone" dataKey="destroyed_rate" name="Intercepted Rate" stroke="#22c55e" dot={false} strokeWidth={1.5} hide={selectedThreatSeries !== null && selectedThreatSeries !== 'avg_destroyed'} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -250,7 +279,7 @@ export default function AerialAssaultsTab() {
 
       <div className="chart-grid-2">
         <div className="chart-card">
-          <h3>Drones vs Missiles (Daily) <span className="chart-source">(Ukraine Air Force)</span></h3>
+          <h3>Drones vs Missiles (Daily) <SourceLink source="MDAA Tracker" /></h3>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={dailyThreats.slice(-180)}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -270,7 +299,18 @@ export default function AerialAssaultsTab() {
                 labelFormatter={(d) => new Date(d).toLocaleDateString()}
                 formatter={(value: number) => fmt(value)}
               />
-              <Legend onClick={(e: any) => droneToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: droneToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
+              <Legend
+                onClick={(e) => handleTypeLegendClick(e.dataKey as string)}
+                formatter={(value: string, entry: any) => (
+                  <span style={{
+                    color: selectedTypeSeries === null || selectedTypeSeries === entry.dataKey ? '#fff' : '#666',
+                    fontWeight: selectedTypeSeries === entry.dataKey ? 'bold' : 'normal',
+                    cursor: 'pointer'
+                  }}>
+                    {value}
+                  </span>
+                )}
+              />
               <Area
                 type="monotone"
                 dataKey="drones_launched"
@@ -278,7 +318,7 @@ export default function AerialAssaultsTab() {
                 stackId="1"
                 stroke="#f97316"
                 fill="#f97316"
-                hide={!droneToggle.isVisible('drones_launched')}
+                hide={selectedTypeSeries !== null && selectedTypeSeries !== 'drones_launched'}
               />
               <Area
                 type="monotone"
@@ -287,14 +327,14 @@ export default function AerialAssaultsTab() {
                 stackId="1"
                 stroke="#3b82f6"
                 fill="#3b82f6"
-                hide={!droneToggle.isVisible('missiles_launched')}
+                hide={selectedTypeSeries !== null && selectedTypeSeries !== 'missiles_launched'}
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
         <div className="chart-card">
-          <h3>Intercept Rate Over Time <span className="chart-source">(Ukraine Air Force)</span></h3>
+          <h3>Intercept Rate Over Time <SourceLink source="MDAA Tracker" /></h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={rollingData.slice(-180)}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -332,7 +372,7 @@ export default function AerialAssaultsTab() {
       </div>
 
       <div className="chart-card">
-        <h3>Weapon Types by Launch Count <span className="chart-source">(Ukraine Air Force)</span></h3>
+        <h3>Weapon Types by Launch Count <SourceLink source="MDAA Tracker" /></h3>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={topWeapons} layout="vertical" margin={{ right: 80 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -352,20 +392,19 @@ export default function AerialAssaultsTab() {
                 name === 'total_launched' ? 'Launched' : name === 'total_destroyed' ? 'Intercepted' : name,
               ]}
             />
-            <Legend onClick={(e: any) => weaponToggle.toggle(e.dataKey)} formatter={(value: string, entry: any) => (<span style={{ color: weaponToggle.isVisible(entry.dataKey) ? '#fff' : '#666', cursor: 'pointer' }}>{value}</span>)} />
-            <Bar dataKey="total_launched" name="Launched" fill="#ef4444" hide={!weaponToggle.isVisible('total_launched')}>
+            <Legend />
+            <Bar dataKey="total_launched" name="Launched" fill="#ef4444">
               <LabelList dataKey="total_launched" position="right" fill="#888" fontSize={9} formatter={(v: number) => fmt(v)} />
             </Bar>
-            <Bar dataKey="total_destroyed" name="Intercepted" fill="#22c55e" hide={!weaponToggle.isVisible('total_destroyed')} />
+            <Bar dataKey="total_destroyed" name="Intercepted" fill="#22c55e" />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       <div className="chart-card">
-        <h3>Intercept Rate by Weapon Type <span className="chart-source">(Ukraine Air Force)</span></h3>
-        <p className="chart-note">Color: <span style={{color:'#ef4444'}}>Ballistic</span> | <span style={{color:'#3b82f6'}}>Cruise</span> | <span style={{color:'#f97316'}}>Drone</span> | <span style={{color:'#888'}}>Other</span></p>
+        <h3>Intercept Rate by Weapon Type <SourceLink source="MDAA Tracker" /></h3>
         <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={weaponsSortedByRate} layout="vertical" margin={{ right: 50 }}>
+          <BarChart data={weaponsSortedAlpha} layout="vertical" margin={{ right: 50 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
             <XAxis
               type="number"
@@ -387,8 +426,8 @@ export default function AerialAssaultsTab() {
               formatter={(value: number) => `${value.toFixed(1)}%`}
             />
             <Bar dataKey="intercept_rate" name="Intercept Rate">
-              {weaponsSortedByRate.map((w, index) => (
-                <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[WEAPON_CATEGORY[w.originalModel] || 'other']} />
+              {weaponsSortedAlpha.map((_, index) => (
+                <Cell key={`cell-${index}`} fill={TAB20_COLORS[index % TAB20_COLORS.length]} />
               ))}
               <LabelList dataKey="intercept_rate" position="right" fill="#888" fontSize={9} formatter={(v: number) => `${v.toFixed(0)}%`} />
             </Bar>

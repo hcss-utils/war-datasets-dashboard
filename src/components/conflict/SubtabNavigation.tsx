@@ -1,31 +1,32 @@
+import React from 'react';
 import type { ConflictSubtab } from '../../types';
+
+interface SubtabNavigationProps {
+  activeSubtab: ConflictSubtab;
+  onSubtabChange: (subtab: ConflictSubtab) => void;
+}
 
 const SUBTABS: { id: ConflictSubtab; label: string }[] = [
   { id: 'acled', label: 'ACLED' },
   { id: 'ucdp', label: 'UCDP' },
   { id: 'viina', label: 'VIINA' },
   { id: 'bellingcat', label: 'Bellingcat' },
-  { id: 'acled-hdx', label: 'ACLED HDX' },
   { id: 'comparison', label: 'Comparison' },
+  { id: 'threats', label: 'GDELT Threats' },
 ];
 
-interface Props {
-  active: ConflictSubtab;
-  onChange: (subtab: ConflictSubtab) => void;
-}
-
-export default function SubtabNavigation({ active, onChange }: Props) {
+export default function SubtabNavigation({ activeSubtab, onSubtabChange }: SubtabNavigationProps) {
   return (
-    <div className="subtab-nav">
-      {SUBTABS.map((st) => (
+    <nav className="subtab-nav">
+      {SUBTABS.map((subtab) => (
         <button
-          key={st.id}
-          className={`subtab-btn ${active === st.id ? 'active' : ''}`}
-          onClick={() => onChange(st.id)}
+          key={subtab.id}
+          className={`subtab-btn ${activeSubtab === subtab.id ? 'active' : ''}`}
+          onClick={() => onSubtabChange(subtab.id)}
         >
-          {st.label}
+          {subtab.label}
         </button>
       ))}
-    </div>
+    </nav>
   );
 }
