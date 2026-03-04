@@ -2,3 +2,7 @@ node_modules/
 desktop.ini
 *.log
 dist/
+.env
+pipeline/.env
+__pycache__/
+*.pyc
