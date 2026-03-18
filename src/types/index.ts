@@ -166,6 +166,43 @@ export interface OverviewStats {
   export_timestamp: string;
 }
 
+export interface SourcesInventoryTable {
+  schema: string;
+  name: string;
+  qualifiedName: string;
+  tableType: 'BASE TABLE' | 'VIEW';
+  rowCount: number | null;
+  formattedRowCount: string | null;
+}
+
+export interface SourcesInventorySourceTable {
+  qualifiedName: string;
+  rowCount: number;
+  formattedRowCount: string;
+}
+
+export interface SourcesInventorySource {
+  tables: SourcesInventorySourceTable[];
+  tableCount: number;
+  totalRecords: number;
+  formattedRecords: string;
+}
+
+export interface SourcesInventory {
+  export_timestamp: string;
+  summary: {
+    totalRecords: number;
+    formattedTotalRecords: string;
+    totalTables: number;
+    totalViews: number;
+    totalSchemas: number;
+    databaseSizeBytes: number;
+    databaseSizePretty: string;
+  };
+  sources: Record<string, SourcesInventorySource>;
+  tables: SourcesInventoryTable[];
+}
+
 export interface DailyEvent {
   date: string;
   acled_events: number;

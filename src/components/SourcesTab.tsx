@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { loadSourcesInventory } from '../data/newLoader';
+import type { SourcesInventory } from '../types';
 
 interface DataSource {
   id: string;
@@ -7,7 +9,7 @@ interface DataSource {
   url: string;
   description: string;
   dateRange: string;
-  records: string;
+  fallbackRecords: string;
   spatialResolution: string;
   updateFrequency: string;
   strengths: string[];
@@ -24,7 +26,7 @@ const DATA_SOURCES: DataSource[] = [
     url: 'https://acleddata.com',
     description: 'Global conflict event database with detailed event typing, actor identification, and fatality counts. Covers battles, explosions, protests, and violence against civilians.',
     dateRange: '2018 - Present',
-    records: '187,740 Ukraine events',
+    fallbackRecords: '187,740 Ukraine events',
     spatialResolution: 'Point-level (lat/lon) with precision indicator',
     updateFrequency: 'Weekly updates',
     strengths: [
@@ -47,7 +49,7 @@ const DATA_SOURCES: DataSource[] = [
     url: 'https://ukraine.bellingcat.com',
     description: 'OSINT-verified civilian harm incidents with infrastructure impact categories and weapon system identification where possible.',
     dateRange: 'Feb 24, 2022 - Present',
-    records: '2,514 verified incidents',
+    fallbackRecords: '2,514 verified incidents',
     spatialResolution: 'Point-level (752 unique locations)',
     updateFrequency: 'Continuous verification',
     strengths: [
@@ -70,7 +72,7 @@ const DATA_SOURCES: DataSource[] = [
     url: 'https://deepstatemap.live',
     description: 'Community-sourced territorial control mapping with polygon geometries showing Ukrainian vs Russian-controlled areas.',
     dateRange: 'Feb 2022 - Present',
-    records: '562 territorial snapshots',
+    fallbackRecords: '562 territorial snapshots',
     spatialResolution: 'Polygon geometries',
     updateFrequency: 'Regular updates',
     strengths: [
@@ -90,7 +92,7 @@ const DATA_SOURCES: DataSource[] = [
     url: 'https://www.kaggle.com/datasets/piterfm/2022-ukraine-russian-war',
     description: 'Daily cumulative equipment losses (tanks, aircraft, artillery, etc.) from Ukrainian Ministry of Defense reports, plus Oryx visual confirmation data.',
     dateRange: 'Feb 24, 2022 - Present',
-    records: '1,432 daily records',
+    fallbackRecords: '1,432 daily records',
     spatialResolution: 'National-level',
     updateFrequency: 'Daily',
     strengths: [
@@ -116,7 +118,7 @@ const DATA_SOURCES: DataSource[] = [
     url: 'https://data.humdata.org',
     description: 'Humanitarian indicators including food prices, poverty rates, IDPs, funding, and humanitarian needs assessments.',
     dateRange: 'Varies by indicator',
-    records: '133,000+ records',
+    fallbackRecords: '133,000+ records',
     spatialResolution: 'Admin1/Admin2 level',
     updateFrequency: 'Varies',
     strengths: [
@@ -130,11 +132,14 @@ const DATA_SOURCES: DataSource[] = [
     ],
     tables: [
       'humanitarian.hapi_food_prices',
+      'humanitarian.hapi_funding',
+      'humanitarian.hapi_humanitarian_needs',
+      'humanitarian.hapi_idps',
+      'humanitarian.hapi_national_risk',
+      'humanitarian.hapi_poverty_rate',
       'humanitarian.hapi_refugees',
       'humanitarian.hapi_returnees',
-      'humanitarian.hapi_idps',
-      'humanitarian.hapi_humanitarian_needs',
-      'humanitarian.hapi_conflict_events',
+      'conflict_events.hapi_conflict_events',
     ],
   },
   {
@@ -144,7 +149,7 @@ const DATA_SOURCES: DataSource[] = [
     url: 'https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/',
     description: 'Systematic tracking of bilateral aid commitments to Ukraine from governments worldwide, covering military, financial, and humanitarian assistance with EUR valuations.',
     dateRange: 'Jan 2022 - Oct 2025',
-    records: '5,800+ commitments from 26 donors',
+    fallbackRecords: '5,800+ commitments from 26 donors',
     spatialResolution: 'Country-level (donor)',
     updateFrequency: 'Monthly updates',
     strengths: [
@@ -158,7 +163,7 @@ const DATA_SOURCES: DataSource[] = [
       'Some multi-year pledges allocated to announcement month',
       'May not capture all bilateral or in-kind contributions',
     ],
-    tables: ['economic.kiel_aid_by_donor', 'economic.kiel_aid_timeline'],
+    tables: ['economic_data.kiel_ukraine_aid'],
   },
   {
     id: 'isw',
@@ -167,7 +172,7 @@ const DATA_SOURCES: DataSource[] = [
     url: 'https://www.understandingwar.org',
     description: 'Daily territorial control shapefiles showing Russian-claimed areas, contested zones, Ukrainian counteroffensives, and front line positions.',
     dateRange: 'Nov 2023 - Present',
-    records: '2.8M+ spatial features',
+    fallbackRecords: '2.8M+ spatial features',
     spatialResolution: 'Polygon/line geometries',
     updateFrequency: 'Daily shapefiles',
     strengths: [
@@ -184,6 +189,10 @@ const DATA_SOURCES: DataSource[] = [
       'isw.events',
       'isw.control_polygons',
       'isw.shapefile_metadata',
+      'isw.clean_daily_areas',
+      'isw.clean_shapefile_metadata',
+      'isw.data_quality_flags',
+      'isw.lines',
     ],
   },
   {
@@ -193,7 +202,7 @@ const DATA_SOURCES: DataSource[] = [
     url: 'https://www.missiledefenseadvocacy.org/missile-threat-and-proliferation/todays-missile-threat/ukrainian-war-updates/',
     description: 'Daily tracking of aerial threats (missiles and UAVs) with intercept statistics. Provides national-level aggregates of attack and defense outcomes.',
     dateRange: 'Jan 2025 - Aug 2025',
-    records: '234 daily records',
+    fallbackRecords: '234 daily records',
     spatialResolution: 'National-level',
     updateFrequency: 'Daily',
     strengths: [
@@ -215,7 +224,7 @@ const DATA_SOURCES: DataSource[] = [
     url: 'https://www.kaggle.com/datasets/piterfm/massive-missile-attacks-on-ukraine',
     description: 'Detailed tracking of missile and drone attacks including weapon models, launch platforms, intercept rates, and affected regions. Based on Ukrainian Air Force reports.',
     dateRange: 'Sep 2022 - Present',
-    records: '3,330 attack records',
+    fallbackRecords: '3,330 attack records',
     spatialResolution: 'Oblast-level',
     updateFrequency: 'Continuous on Kaggle',
     strengths: [
@@ -237,7 +246,7 @@ const DATA_SOURCES: DataSource[] = [
     url: 'https://www.sipri.org/databases/milex',
     description: 'Global military expenditure data covering 173 countries from 1949 onwards. Provides consistent, comparable data on military spending using open-source government budget information.',
     dateRange: '1949 - 2024',
-    records: '9 key countries tracked (76 years)',
+    fallbackRecords: '9 key countries tracked (76 years)',
     spatialResolution: 'Country-level',
     updateFrequency: 'Annual release (April)',
     strengths: [
@@ -251,7 +260,7 @@ const DATA_SOURCES: DataSource[] = [
       'Russia data may undercount off-budget military spending',
       'Some countries have gaps in reporting',
     ],
-    tables: ['economic.sipri_expenditure'],
+    tables: ['economic_data.sipri_military_expenditure'],
   },
   {
     id: 'ohchr',
@@ -260,7 +269,7 @@ const DATA_SOURCES: DataSource[] = [
     url: 'https://www.ohchr.org/en/news/2024/09/ukraine-civilian-casualty-update',
     description: 'Official UN civilian casualty figures with regional breakdowns. Conservative methodology counting only verified casualties.',
     dateRange: 'Feb 2022 - Present',
-    records: '71 monthly reports',
+    fallbackRecords: '71 monthly reports',
     spatialResolution: 'Oblast-level',
     updateFrequency: 'Monthly reports',
     strengths: [
@@ -282,7 +291,7 @@ const DATA_SOURCES: DataSource[] = [
     url: 'https://ucdp.uu.se',
     description: 'Academic gold-standard conflict dataset with rigorous coding methodology, three-estimate fatality approach, and comprehensive source documentation.',
     dateRange: '1989 - Dec 2024',
-    records: '31,547 Ukraine events',
+    fallbackRecords: '31,547 Ukraine events',
     spatialResolution: '7-level precision scale',
     updateFrequency: 'Annual release',
     strengths: [
@@ -305,7 +314,7 @@ const DATA_SOURCES: DataSource[] = [
     url: 'https://data.unhcr.org/en/situations/ukraine',
     description: 'Refugee and displacement statistics including cross-border movements, asylum applications, and demographic breakdowns.',
     dateRange: 'Feb 2022 - Present',
-    records: '56,000+ records',
+    fallbackRecords: '56,000+ records',
     spatialResolution: 'Country/region-level',
     updateFrequency: 'Regular updates',
     strengths: [
@@ -319,7 +328,6 @@ const DATA_SOURCES: DataSource[] = [
     ],
     tables: [
       'humanitarian.unhcr_population',
-      'humanitarian.unhcr_refugees',
       'humanitarian.unhcr_asylum_applications',
       'humanitarian.unhcr_asylum_decisions',
       'humanitarian.unhcr_demographics',
@@ -332,7 +340,7 @@ const DATA_SOURCES: DataSource[] = [
     url: 'https://github.com/zhukovyuri/VIINA',
     description: 'ML-classified conflict events from Ukrainian and Russian news sources. BERT-based transformer classifies 24 event types and 6 actor categories with daily territorial control tracking.',
     dateRange: 'Feb 24, 2022 - Present',
-    records: '48M+ records (control + events)',
+    fallbackRecords: '48M+ records (control + events)',
     spatialResolution: '33,141 Ukrainian populated places',
     updateFrequency: 'Daily updates',
     strengths: [
@@ -355,7 +363,17 @@ const DATA_SOURCES: DataSource[] = [
   },
 ];
 
-function SourceCard({ source, highlighted }: { source: DataSource; highlighted: boolean }) {
+function SourceCard({
+  source,
+  highlighted,
+  inventory,
+}: {
+  source: DataSource;
+  highlighted: boolean;
+  inventory?: SourcesInventory['sources'][string];
+}) {
+  const records = inventory ? `${inventory.formattedRecords} rows` : source.fallbackRecords;
+
   return (
     <div className={`source-card ${highlighted ? 'highlighted' : ''}`} id={`source-${source.id}`}>
       <div className="source-header">
@@ -374,7 +392,7 @@ function SourceCard({ source, highlighted }: { source: DataSource; highlighted: 
         </div>
         <div className="meta-item">
           <span className="meta-label">Records</span>
-          <span className="meta-value">{source.records}</span>
+          <span className="meta-value">{records}</span>
         </div>
         <div className="meta-item">
           <span className="meta-label">Resolution</span>
@@ -417,6 +435,8 @@ function SourceCard({ source, highlighted }: { source: DataSource; highlighted: 
 
 export default function SourcesTab() {
   const [highlightedSource, setHighlightedSource] = useState<string | null>(null);
+  const [inventory, setInventory] = useState<SourcesInventory | null>(null);
+  const [inventoryError, setInventoryError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -447,6 +467,27 @@ export default function SourcesTab() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    loadSourcesInventory()
+      .then((data) => {
+        if (!cancelled) {
+          setInventory(data);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error('Failed to load sources inventory', error);
+          setInventoryError('Live inventory unavailable');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="sources-tab">
       <div className="sources-intro">
@@ -458,27 +499,33 @@ export default function SourcesTab() {
         </p>
         <div className="sources-summary">
           <div className="summary-stat">
-            <span className="stat-value">52M+</span>
+            <span className="stat-value">{inventory?.summary.formattedTotalRecords ?? '...'}</span>
             <span className="stat-label">Total Records</span>
           </div>
           <div className="summary-stat">
-            <span className="stat-value">48</span>
+            <span className="stat-value">{inventory?.summary.totalTables ?? '...'}</span>
             <span className="stat-label">Database Tables</span>
           </div>
           <div className="summary-stat">
-            <span className="stat-value">8</span>
+            <span className="stat-value">{inventory?.summary.totalSchemas ?? '...'}</span>
             <span className="stat-label">Schemas</span>
           </div>
           <div className="summary-stat">
-            <span className="stat-value">7.2 GB</span>
+            <span className="stat-value">{inventory?.summary.databaseSizePretty ?? '...'}</span>
             <span className="stat-label">Database Size</span>
           </div>
         </div>
+        {inventoryError && <p className="sources-warning">{inventoryError}</p>}
       </div>
 
       <div className="sources-grid">
         {DATA_SOURCES.map((source) => (
-          <SourceCard key={source.id} source={source} highlighted={highlightedSource === source.id} />
+          <SourceCard
+            key={source.id}
+            source={source}
+            highlighted={highlightedSource === source.id}
+            inventory={inventory?.sources[source.id]}
+          />
         ))}
       </div>
 

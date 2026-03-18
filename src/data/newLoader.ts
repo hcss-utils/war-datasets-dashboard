@@ -1,5 +1,6 @@
 import type {
   OverviewStats,
+  SourcesInventory,
   DailyEvent,
   EventByType,
   EventByRegion,
@@ -35,6 +36,7 @@ async function fetchJson<T>(path: string): Promise<T> {
 }
 
 export const loadOverviewStats = () => fetchJson<OverviewStats>('overview_stats.json');
+export const loadSourcesInventory = () => fetchJson<SourcesInventory>('sources_inventory.json');
 export const loadDailyEvents = () => fetchJson<DailyEvent[]>('daily_events.json');
 export const loadEventsByType = () => fetchJson<EventByType[]>('events_by_type.json');
 export const loadEventsByRegion = () => fetchJson<EventByRegion[]>('events_by_region.json');
