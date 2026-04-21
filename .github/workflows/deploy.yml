@@ -1,0 +1,40 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci --legacy-peer-deps
+      - run: npm run build
+
+      - name: Deploy to GitHub Pages (hcss-utils — authoritative)
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+
+      # Mirror dist/ to sdspieg/war-datasets-dashboard gh-pages so
+      # https://sdspieg.github.io/war-datasets-dashboard/ (legacy URL) keeps serving.
+      - name: Deploy to sdspieg/war-datasets-dashboard gh-pages (legacy URL mirror)
+        if: ${{ env.SDSPIEG_PAGES_PAT != '' }}
+        env:
+          SDSPIEG_PAGES_PAT: ${{ secrets.SDSPIEG_PAGES_PAT }}
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          personal_token: ${{ secrets.SDSPIEG_PAGES_PAT }}
+          external_repository: sdspieg/war-datasets-dashboard
+          publish_branch: gh-pages
+          publish_dir: ./dist
