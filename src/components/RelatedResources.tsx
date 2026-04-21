@@ -1,14 +1,13 @@
-type Link = { label: string; url: string; kind: 'dash' | 'deck' | 'doc' | 'app' };
+type Link = { label: string; url: string; kind: 'dash' | 'app' | 'repo' };
 
 const links: Link[] = [
-  { label: 'Red Lines Dashboard', url: 'https://sdspieg.github.io/redlines-dashboard/', kind: 'dash' },
-  { label: 'Causal Dashboard', url: 'https://sdspieg.github.io/russian_redlines-causal-dashboard/', kind: 'dash' },
-  { label: 'RuBase Deliverables', url: 'http://138.201.62.161:9081/#red-lines', kind: 'app' },
-  { label: 'SLR (Volitional Red Lines)', url: 'https://drive.google.com/file/d/17XmKpkbyb51jy6vN7pT8Shw1NJtNI1P_/preview', kind: 'doc' },
-  { label: 'IRSEM Slides', url: 'http://138.201.62.161:9081/assets/presentations/redlines-ppt-presentation.html', kind: 'deck' },
+  { label: 'Red Lines Dashboard',        url: 'https://sdspieg.github.io/redlines-dashboard/',                kind: 'dash' },
+  { label: 'Causal Dashboard',           url: 'https://sdspieg.github.io/russian_redlines-causal-dashboard/', kind: 'dash' },
+  { label: 'RuBase Deliverables',        url: 'http://138.201.62.161:9081/#red-lines',                        kind: 'app'  },
+  { label: 'GitHub — war-datasets-dashboard', url: 'https://github.com/sdspieg/war-datasets-dashboard',       kind: 'repo' },
 ];
 
-const icon: Record<Link['kind'], string> = { dash: '\u{1F4CA}', deck: '\u{1F4C4}', doc: '\u{1F4D6}', app: '\u{1F9ED}' };
+const icon: Record<Link['kind'], string> = { dash: '📊', app: '🧭', repo: '💻' };
 
 export default function RelatedResources() {
   return (
@@ -18,7 +17,7 @@ export default function RelatedResources() {
       background: 'rgba(30, 42, 69, 0.6)', border: '1px solid #2a3a5a', borderRadius: 8,
       fontSize: 12,
     }}>
-      <span style={{ color: '#a0a0b0', marginRight: 4 }}>Related Red Lines resources \u2192</span>
+      <span style={{ color: '#a0a0b0', marginRight: 4 }}>Related Red Lines resources →</span>
       {links.map(l => (
         <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer"
           style={{
