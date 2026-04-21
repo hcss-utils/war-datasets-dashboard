@@ -4,7 +4,7 @@ const links: Link[] = [
   { label: 'Red Lines Dashboard',        url: 'https://sdspieg.github.io/redlines-dashboard/',                kind: 'dash' },
   { label: 'Causal Dashboard',           url: 'https://sdspieg.github.io/russian_redlines-causal-dashboard/', kind: 'dash' },
   { label: 'RuBase Deliverables',        url: 'http://138.201.62.161:9081/#red-lines',                        kind: 'app'  },
-  { label: 'GitHub — war-datasets-dashboard', url: 'https://github.com/sdspieg/war-datasets-dashboard',       kind: 'repo' },
+  { label: 'GitHub — war-datasets-dashboard', url: 'https://github.com/hcss-utils/war-datasets-dashboard',    kind: 'repo' },
 ];
 
 const icon: Record<Link['kind'], string> = { dash: '📊', app: '🧭', repo: '💻' };
