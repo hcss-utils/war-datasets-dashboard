@@ -1,0 +1,21 @@
+{
+  "dateRange": {
+    "start": "2023-11-23",
+    "end": "2026-01-24"
+  },
+  "layerTypes": [
+    "kursk_russian_advances",
+    "partisan_warfare",
+    "russian_advances",
+    "russian_claimed",
+    "russian_infiltration",
+    "ukraine_control_map",
+    "ukraine_other",
+    "ukrainian_counteroffensives"
+  ],
+  "totalDailyRecords": 3601,
+  "totalEvents": 39,
+  "territoryChangePoints": 39,
+  "kurskChangePoints": 37,
+  "exportTimestamp": "2026-01-26T04:20:18.366888"
+}
