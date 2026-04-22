@@ -1,0 +1,59 @@
+name: Update Data
+
+on:
+  schedule:
+    - cron: '0 10 * * *'  # daily at 10:00 UTC
+  workflow_dispatch:
+
+jobs:
+  export-and-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Create .env for pipeline
+        run: |
+          printf 'DB_HOST=%s\nDB_PORT=%s\nDB_NAME=%s\nDB_USER=%s\nDB_PASSWORD=%s\nACLED_EMAIL=%s\nACLED_API_KEY=%s\nACLED_PASSWORD=%s\nBQ_PROJECT=%s\n' \
+            "${{ secrets.DB_HOST }}" \
+            "${{ secrets.DB_PORT }}" \
+            "${{ secrets.DB_NAME }}" \
+            "${{ secrets.DB_USER }}" \
+            "${{ secrets.DB_PASSWORD }}" \
+            "${{ secrets.ACLED_EMAIL }}" \
+            "${{ secrets.ACLED_API_KEY }}" \
+            "${{ secrets.ACLED_PASSWORD }}" \
+            "${{ secrets.BQ_PROJECT }}" \
+            > pipeline/.env
+
+      - name: Update datasets
+        run: python pipeline/update_all_datasets.py
+
+      - name: Export data to JSON
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          EXPORT_OUTPUT_DIR: ${{ github.workspace }}/public/data
+        run: python pipeline/scripts/export_all_dashboard_data.py
+
+      - name: Commit and push updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/data/
+          git diff --staged --quiet && echo "No data changes" || (
+            git commit -m "chore: update data $(date -u +%Y-%m-%d)" && git push
+          )

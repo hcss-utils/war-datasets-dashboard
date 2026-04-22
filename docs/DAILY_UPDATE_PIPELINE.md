@@ -378,7 +378,7 @@ DB_USER=postgres DB_PASSWORD=<password> OUTPUT_DIR=public/data \
 python scripts/export_all_dashboard_data.py
 ```
 
-The default values in the scripts point to the local Docker database (`localhost:5433`, `russian_ukrainian_war`, `isw/isw2026`), so running without env vars uses the local DB.
+The default values in the scripts point to the local Docker database (`localhost:5433`, `russian_ukrainian_war`), so running without env vars uses the local DB.
 
 ---
 
@@ -425,7 +425,7 @@ The default values in the scripts point to the local Docker database (`localhost
 | `DB_PORT` | `5433` | From secret | Database port |
 | `DB_NAME` | `russian_ukrainian_war` | From secret | Database name |
 | `DB_USER` | `isw` | From secret | Database user |
-| `DB_PASSWORD` | `isw2026` | From secret | Database password |
+| `DB_PASSWORD` | *(none)* | From secret | Database password |
 | `OUTPUT_DIR` | `<script_dir>/../public/data` | `public/data` | Where JSON files are written |
 | `CHANGED_KEYS` | *(none)* | Set by check step | Comma-separated changed dataset keys |
 | `GITHUB_OUTPUT` | *(none)* | Set by Actions | File path for writing step outputs |

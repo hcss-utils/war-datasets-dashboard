@@ -3,7 +3,7 @@ type Link = { label: string; url: string; kind: 'dash' | 'app' | 'repo' };
 const links: Link[] = [
   { label: 'Red Lines Dashboard',        url: 'https://sdspieg.github.io/redlines-dashboard/',                kind: 'dash' },
   { label: 'Causal Dashboard',           url: 'https://sdspieg.github.io/russian_redlines-causal-dashboard/', kind: 'dash' },
-  { label: 'RuBase Deliverables',        url: 'http://138.201.62.161:9081/#red-lines',                        kind: 'app'  },
+  { label: 'RuBase Deliverables',        url: 'http://138.201.62.161:8081/',                                  kind: 'app'  },
   { label: 'GitHub — war-datasets-dashboard', url: 'https://github.com/hcss-utils/war-datasets-dashboard',    kind: 'repo' },
 ];
 

@@ -391,7 +391,7 @@ DB_CONFIG = {
     'port': int(os.environ.get('DB_PORT', '5433')),
     'dbname': os.environ.get('DB_NAME', 'russian_ukrainian_war'),
     'user': os.environ.get('DB_USER', 'isw'),
-    'password': os.environ.get('DB_PASSWORD', 'isw2026'),
+    'password': os.environ.get('DB_PASSWORD', ''),
 }
 OUTPUT_DIR = Path(os.environ.get('EXPORT_OUTPUT_DIR', './dashboard/public/data'))
 ```
