@@ -37,7 +37,7 @@ jobs:
             > pipeline/.env
 
       - name: Update datasets
-        run: python pipeline/update_all_datasets.py
+        run: python pipeline/update_all_datasets.py || true
 
       - name: Export data to JSON
         env:

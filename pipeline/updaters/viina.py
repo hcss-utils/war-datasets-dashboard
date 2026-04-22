@@ -13,7 +13,7 @@ import requests
 
 from .base import BaseUpdater
 
-VIINA_URL_TEMPLATE = "https://github.com/zhukovyuri/VIINA/raw/master/Data/event_info_latest_{year}.zip"
+VIINA_URL_TEMPLATE = "https://media.githubusercontent.com/media/zhukovyuri/VIINA/main/Data/event_info_latest_{year}.zip"
 
 DB_COLUMNS = [
     "viina_version", "event_id", "event_id_1pd", "date", "time",
