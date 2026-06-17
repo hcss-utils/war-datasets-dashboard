@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import { usePlotlyZoom } from '../../utils/usePlotlyZoom';
-import { loadDailyAreas } from '../../data/newLoader';
+import { loadDailyAreas, loadDeepStateAreas, type DeepStateArea } from '../../data/newLoader';
 import type { DailyArea, TerritoryLayerType } from '../../types';
 
 const fmt = (n: number) => n.toLocaleString();
 
 const SOURCE_ID_MAP: Record<string, string> = {
   'DeepState': 'deepstate',
+  'ISW': 'isw',
 };
 
 const SourceLink = ({ source }: { source: string }) => {
@@ -74,6 +75,7 @@ interface TerritoryLossesSubtabProps {
 export default function TerritoryLossesSubtab({ selectedLayers }: TerritoryLossesSubtabProps) {
   const { xaxisRange, onRelayout } = usePlotlyZoom();
   const [dailyAreas, setDailyAreas] = useState<DailyArea[]>([]);
+  const [deepState, setDeepState] = useState<DeepStateArea[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,6 +89,7 @@ export default function TerritoryLossesSubtab({ selectedLayers }: TerritoryLosse
         setError(err.message);
         setLoading(false);
       });
+    loadDeepStateAreas().then(setDeepState).catch(() => {});
   }, []);
 
   // Process data by layer type
@@ -175,7 +178,7 @@ export default function TerritoryLossesSubtab({ selectedLayers }: TerritoryLosse
   return (
     <div className="conflict-subtab">
       <h2>Territory Control</h2>
-      <p className="tab-subtitle">Daily territorial control data from DeepState/ISW</p>
+      <p className="tab-subtitle">Territorial control — the DeepState genuinely-daily occupied series (full war) plus the ISW layer-type series (editorial redraw)</p>
 
       <div className="stat-cards conflict-stats">
         {selectedLayersList.map(layer => (
@@ -186,9 +189,38 @@ export default function TerritoryLossesSubtab({ selectedLayers }: TerritoryLosse
         ))}
       </div>
 
-      {/* Stacked Area Chart */}
+      {/* DeepState full-war occupied series (genuinely daily) */}
       <div className="chart-card">
-        <h3>Territory by Layer Type <SourceLink source="DeepState" /></h3>
+        <h3>Russian-Occupied Territory — full war <SourceLink source="DeepState" /></h3>
+        <Plot
+          data={[{
+            x: deepState.map((d) => d.date),
+            y: deepState.map((d) => d.occupiedKm2),
+            type: 'scatter' as const,
+            mode: 'lines' as const,
+            name: 'DeepState occupied',
+            line: { color: '#ef4444', width: 1.5 },
+            fill: 'tozeroy' as const,
+            fillcolor: 'rgba(239,68,68,0.15)',
+            hovertemplate: '%{x}: %{y:,.0f} km²<extra></extra>',
+          }]}
+          layout={{
+            ...darkLayout,
+            height: 340,
+            xaxis: { ...darkLayout.xaxis, rangeslider: { visible: true, thickness: 0.08, bgcolor: '#1a1a2e', bordercolor: '#333' } },
+            yaxis: { ...darkLayout.yaxis, tickformat: ',', title: { text: 'Occupied area (km²)', font: { size: 11, color: '#888' } } },
+          }}
+          config={plotConfig}
+          style={{ width: '100%' }}
+        />
+        <p style={{ color: '#888', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+          DeepState is genuinely daily and covers the full war from 2022-04-21 (incl. the 2022 maneuver phases). The ISW layer-type charts below start 2023-11-23 and step between editorial redraws.
+        </p>
+      </div>
+
+      {/* Stacked Area Chart (ISW layer types) */}
+      <div className="chart-card">
+        <h3>Territory by Layer Type <SourceLink source="ISW" /></h3>
         <Plot
           data={selectedLayersList.map(layer => ({
             x: processedData.dates,
@@ -226,7 +258,7 @@ export default function TerritoryLossesSubtab({ selectedLayers }: TerritoryLosse
       {/* Ukrainian Control Focus */}
       {selectedLayers.has('ukraine_control_map') && (
         <div className="chart-card">
-          <h3>Ukrainian-Controlled Territory <SourceLink source="DeepState" /></h3>
+          <h3>Ukrainian-Controlled Territory <SourceLink source="ISW" /></h3>
           <Plot
             data={[
               {
@@ -263,7 +295,7 @@ export default function TerritoryLossesSubtab({ selectedLayers }: TerritoryLosse
 
       {/* Daily Changes Bar Chart */}
       <div className="chart-card">
-        <h3>Daily Territory Changes (Last 90 Days) <SourceLink source="DeepState" /></h3>
+        <h3>Daily Territory Changes (Last 90 Days) <SourceLink source="ISW" /></h3>
         <Plot
           data={selectedLayersList.map(layer => ({
             x: dailyChanges.slice(-90).map(d => d.date),

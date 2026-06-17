@@ -712,6 +712,29 @@ def export_territory_data(conn):
     return formatted
 
 
+def export_deepstate_territory(conn):
+    """Export the DeepState daily occupied-area series.
+
+    Distinct from export_territory_data() (the ISW shapefile layer-type series,
+    which starts 2023-11-23 and is step-functioned by ISW's editorial redraws).
+    DeepState is genuinely daily and covers the full war from 2022-04-21, so it
+    is the right primary tempo/coverage series (incl. the 2022 maneuver phases).
+    Source: war_datasets.territorial_control.deepstate_daily_areas.
+    """
+    print("\n[15b/15] Exporting DeepState territory data...")
+    data = query_to_list(conn, """
+        SELECT date, occupied_km2
+        FROM territorial_control.deepstate_daily_areas
+        ORDER BY date
+    """)
+    formatted = [
+        {'date': row['date'], 'occupiedKm2': round(float(row['occupied_km2']), 2)}
+        for row in data
+    ]
+    save_json(formatted, 'deepstate_daily_areas.json')
+    return formatted
+
+
 def export_hapi_data(conn):
     """Export HAPI humanitarian data."""
     print("\n[17/18] Exporting HAPI data...")
@@ -1948,6 +1971,7 @@ def main():
         export_viina_events(conn)
         export_bellingcat_incidents(conn)
         export_territory_data(conn)
+        export_deepstate_territory(conn)
         export_viina_aggregates(conn)
         export_hapi_data(conn)
         export_ucdp_by_violence_type(conn)

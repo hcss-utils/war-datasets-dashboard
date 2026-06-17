@@ -108,6 +108,11 @@ export const loadViinaMonthlyByEventType = () => fetchJson<ViinaMonthlyByEventTy
 export const loadKIUOfficersSummary = () => fetchJson<KIUOfficersSummary>('kiu_officers_summary.json');
 export const loadDailyAreas = () => fetchJson<DailyArea[]>('daily_areas.json');
 
+// DeepState genuinely-daily occupied-area series (full war 2022-04-21->), distinct
+// from the ISW layer-type series above. Source: war_datasets.territorial_control.
+export interface DeepStateArea { date: string; occupiedKm2: number; }
+export const loadDeepStateAreas = () => fetchJson<DeepStateArea[]>('deepstate_daily_areas.json');
+
 // Kaggle missile data loaders
 export interface KaggleMissileDaily {
   date: string;
