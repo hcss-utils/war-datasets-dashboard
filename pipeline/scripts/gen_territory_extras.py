@@ -59,17 +59,28 @@ def main():
                 FROM territorial_control.deepstate_polygons WHERE date=:dd"""), {"dd": ds_date}).scalar()
             (GJ / f"{mestr}.geojson").write_text(json.dumps(fc))
             gj_count += 1
-            # ISW occupied GeoJSON for this month-end (refreshed from PG, aligned monthly)
-            if isw_date:
-                fci = c.execute(text("""
-                    SELECT json_build_object('type','FeatureCollection','features',
-                      coalesce(json_agg(json_build_object('type','Feature','properties',
-                        json_build_object('layer_type','ukraine_control_map','date',:id),
-                        'geometry',ST_AsGeoJSON(ST_MakeValid(cp.geometry))::json)), '[]'::json))
-                    FROM isw.control_polygons cp JOIN isw.shapefile_metadata sm ON sm.id=cp.metadata_id
-                    LEFT JOIN isw.data_quality_flags dq ON dq.metadata_id=sm.id AND dq.exclude_from_analysis
-                    WHERE sm.layer_type='ukraine_control_map' AND sm.layer_date=:id AND dq.id IS NULL"""),
-                    {"id": isw_date}).scalar()
+            # ISW GeoJSON for this month-end: control + UA counteroffensives + RU advances + Kursk,
+            # each feature tagged with layer_type so the map can colour/toggle per layer. Each layer
+            # uses its OWN nearest redraw date <= month-end (>= 2022 to skip bad-parse years).
+            fci = c.execute(text("""
+                WITH layers(lt) AS (VALUES ('ukraine_control_map'),('ukrainian_counteroffensives'),
+                                           ('russian_advances'),('kursk_russian_advances')),
+                nearest AS (
+                  SELECT l.lt, (SELECT max(sm.layer_date) FROM isw.shapefile_metadata sm
+                      LEFT JOIN isw.data_quality_flags dq ON dq.metadata_id=sm.id AND dq.exclude_from_analysis
+                      WHERE sm.layer_type=l.lt AND sm.conflict='ukraine' AND dq.id IS NULL
+                        AND sm.layer_date <= :me AND sm.layer_date >= DATE '2022-01-01') AS ld
+                  FROM layers l)
+                SELECT json_build_object('type','FeatureCollection','features',
+                   coalesce(json_agg(json_build_object('type','Feature',
+                      'properties', json_build_object('layer_type', n.lt, 'date', n.ld),
+                      'geometry', ST_AsGeoJSON(ST_MakeValid(cp.geometry))::json)), '[]'::json))
+                FROM nearest n
+                JOIN isw.shapefile_metadata sm ON sm.layer_type=n.lt AND sm.layer_date=n.ld AND sm.conflict='ukraine'
+                JOIN isw.control_polygons cp ON cp.metadata_id=sm.id
+                LEFT JOIN isw.data_quality_flags dq ON dq.metadata_id=sm.id AND dq.exclude_from_analysis
+                WHERE dq.id IS NULL AND n.ld IS NOT NULL"""), {"me": me}).scalar()
+            if fci and fci.get("features"):
                 (GJ_ISW / f"{mestr}.geojson").write_text(json.dumps(fci))
                 isw_months.append(mestr)
             # monthly IoU (only where both sources present)

@@ -58,7 +58,11 @@ export default function MapTab({ dailyAreas, iswDates }: Props) {
         {view === 'comparison' && 'How ISW and DeepState correspond, with War Mapper as a third cross-check.'}
       </p>
 
-      {view === 'isw' && <TerritoryMap key="isw" dataset="isw" dailyAreas={dailyAreas} availableDates={iswActive} />}
+      {view === 'isw' && iswActive.length > 0 && (
+        /* key on the date set so the map remounts when the month-end manifest finishes loading
+           (otherwise it stays stuck on the initial redraw-date = old single-layer files). */
+        <TerritoryMap key={`isw-${iswActive[0]}-${iswActive.length}`} dataset="isw" dailyAreas={dailyAreas} availableDates={iswActive} />
+      )}
       {view === 'deepstate' && (
         dsDates.length
           ? <TerritoryMap key="deepstate" dataset="deepstate" dailyAreas={dailyAreas} availableDates={dsDates} />

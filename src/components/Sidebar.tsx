@@ -58,19 +58,23 @@ export default function Sidebar({ dailyAreas, events }: SidebarProps) {
         </div>
       </div>
 
-      <div className="sidebar-section">
-        <div className="toggle-row">
-          <label>Interpolated data</label>
-          <div className="toggle-switch">
-            <input
-              type="checkbox"
-              checked={state.showInterpolation}
-              onChange={() => dispatch({ type: 'TOGGLE_INTERPOLATION' })}
-            />
-            <span className="slider" />
+      {/* Interpolation only applies to the step-function CHARTS (Gains/Losses), not the
+          polygon map — hide it on the Map tab where it has no effect. */}
+      {state.activeTab !== 'map' && (
+        <div className="sidebar-section">
+          <div className="toggle-row">
+            <label>Interpolated data</label>
+            <div className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={state.showInterpolation}
+                onChange={() => dispatch({ type: 'TOGGLE_INTERPOLATION' })}
+              />
+              <span className="slider" />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <EventFilter events={events} />
     </>

@@ -7,6 +7,14 @@ import MapLegend from './MapLegend';
 import type { DailyArea } from '../../types';
 import type { GeoJsonObject } from 'geojson';
 
+const LAYER_META: Record<string, { label: string; color: string }> = {
+  ukraine_control_map: { label: 'Russian-occupied', color: '#d62728' },
+  russian_advances: { label: 'Russian advances', color: '#f97316' },
+  ukrainian_counteroffensives: { label: 'Ukrainian counteroffensives', color: '#3b82f6' },
+  kursk_russian_advances: { label: 'Kursk (RU advances)', color: '#a855f7' },
+};
+const ALL_LAYERS = Object.keys(LAYER_META);
+
 interface Props {
   dailyAreas: DailyArea[];
   availableDates: string[];
@@ -21,6 +29,7 @@ export default function TerritoryMap({ dailyAreas, availableDates, dataset = 'is
   const [loading, setLoading] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1000); // ms per step
+  const [enabledLayers, setEnabledLayers] = useState<Set<string>>(new Set(ALL_LAYERS));
   const timerRef = useRef<number | null>(null);
 
   // Filter available dates to current date range
@@ -68,15 +77,39 @@ export default function TerritoryMap({ dailyAreas, availableDates, dataset = 'is
     setPlaying(false);
   }, []);
 
-  const geoStyle = {
-    color: '#d62728',
-    weight: 1.5,
-    fillColor: '#d62728',
-    fillOpacity: 0.35,
+  // Split the loaded FeatureCollection by layer_type so each layer renders as its own
+  // <GeoJSON> with a solid colour (react-leaflet ignores post-mount data/style changes on a
+  // single layer, so one layer per type — keyed by date+type — is the reliable pattern).
+  const fc: any = geoData;
+  const byLayer: Record<string, any> = {};
+  if (fc?.features) {
+    for (const f of fc.features) {
+      const lt = f?.properties?.layer_type || 'ukraine_control_map';
+      (byLayer[lt] ||= { type: 'FeatureCollection', features: [] }).features.push(f);
+    }
+  }
+  const layerStyle = (lt: string) => () => {
+    const color = LAYER_META[lt]?.color || '#d62728';
+    return { color, weight: 1.5, fillColor: color, fillOpacity: 0.3 };
   };
 
   return (
     <div className="map-container">
+      {dataset === 'isw' && (
+        <div className="map-layer-toggles" style={{ display: 'flex', gap: '0.9rem', flexWrap: 'wrap', padding: '4px 2px 8px' }}>
+          {ALL_LAYERS.map((lt) => (
+            <label key={lt} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.8rem', color: '#cbd5e1', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={enabledLayers.has(lt)}
+                onChange={() => setEnabledLayers((s) => { const n = new Set(s); if (n.has(lt)) n.delete(lt); else n.add(lt); return n; })}
+              />
+              <span style={{ width: 11, height: 11, background: LAYER_META[lt].color, display: 'inline-block', borderRadius: 2 }} />
+              {LAYER_META[lt].label}
+            </label>
+          ))}
+        </div>
+      )}
       <div className="map-wrapper">
         <MapContainer
           center={[48.5, 37.5]}
@@ -88,12 +121,21 @@ export default function TerritoryMap({ dailyAreas, availableDates, dataset = 'is
             attribution='&copy; <a href="https://carto.com/">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
-          {geoData && (
-            <GeoJSON
-              key={currentDate}
-              data={geoData}
-              style={() => geoStyle}
-            />
+          {geoData && (dataset === 'deepstate'
+            ? (
+              <GeoJSON
+                key={`${currentDate}-ds`}
+                data={geoData}
+                style={layerStyle('ukraine_control_map')}
+              />
+            )
+            : ALL_LAYERS.filter((lt) => enabledLayers.has(lt) && byLayer[lt]).map((lt) => (
+              <GeoJSON
+                key={`${currentDate}-${lt}`}
+                data={byLayer[lt] as GeoJsonObject}
+                style={layerStyle(lt)}
+              />
+            ))
           )}
         </MapContainer>
         <MapLegend currentDate={currentDate} loading={loading} />
