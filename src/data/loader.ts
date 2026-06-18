@@ -26,6 +26,18 @@ export async function loadTerritoryGeoJSON(date: string): Promise<GeoJSONFeature
   return res.json();
 }
 
+export async function loadDeepStateGeoJSON(date: string): Promise<GeoJSONFeatureCollection> {
+  const res = await fetch(`${BASE_URL}/deepstate_geojson/${date}.geojson`);
+  if (!res.ok) throw new Error(`Failed to load DeepState GeoJSON for ${date}: ${res.status}`);
+  return res.json();
+}
+
+export async function loadDeepStateMapDates(): Promise<string[]> {
+  const res = await fetch(`${BASE_URL}/deepstate_geojson_dates.json`);
+  if (!res.ok) throw new Error(`Failed to load DeepState map dates: ${res.status}`);
+  return res.json();
+}
+
 export async function loadKurskGeoJSON(date: string): Promise<GeoJSONFeatureCollection> {
   const res = await fetch(`${BASE_URL}/kursk_geojson/${date}.geojson`);
   if (!res.ok) throw new Error(`Failed to load Kursk GeoJSON for ${date}: ${res.status}`);

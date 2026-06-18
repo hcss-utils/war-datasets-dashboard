@@ -16,7 +16,7 @@ import HumanitarianTabPlotly from './components/HumanitarianTabPlotly';
 import type { DailyArea, MilitaryEvent, DashboardMetadata } from './types';
 
 // Lazy-load the map to avoid SSR issues with Leaflet
-const TerritoryMap = React.lazy(() => import('./components/map/TerritoryMap'));
+const MapTab = React.lazy(() => import('./components/map/MapTab'));
 
 // ---- Error Boundary ----
 interface EBState { hasError: boolean; error: string }
@@ -229,7 +229,7 @@ function DashboardContent() {
       {state.activeTab === 'map' && (
         <React.Suspense fallback={<div className="loading-container"><div className="loading-spinner" /><span className="loading-text">Loading map...</span></div>}>
           <ChartErrorBoundary name="Territory Map">
-            <TerritoryMap dailyAreas={dailyAreas} availableDates={territoryDates} />
+            <MapTab dailyAreas={dailyAreas} iswDates={territoryDates} />
           </ChartErrorBoundary>
         </React.Suspense>
       )}

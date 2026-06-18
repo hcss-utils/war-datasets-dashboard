@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import { useDashboard } from '../../context/DashboardContext';
-import { loadTerritoryGeoJSON } from '../../data/loader';
+import { loadTerritoryGeoJSON, loadDeepStateGeoJSON } from '../../data/loader';
 import TimeSlider from './TimeSlider';
 import MapLegend from './MapLegend';
 import type { DailyArea } from '../../types';
@@ -10,9 +10,11 @@ import type { GeoJsonObject } from 'geojson';
 interface Props {
   dailyAreas: DailyArea[];
   availableDates: string[];
+  dataset?: 'isw' | 'deepstate';
 }
 
-export default function TerritoryMap({ dailyAreas, availableDates }: Props) {
+export default function TerritoryMap({ dailyAreas, availableDates, dataset = 'isw' }: Props) {
+  const loadGeo = dataset === 'deepstate' ? loadDeepStateGeoJSON : loadTerritoryGeoJSON;
   const { state } = useDashboard();
   const [currentDate, setCurrentDate] = useState(availableDates[0] || '');
   const [geoData, setGeoData] = useState<GeoJsonObject | null>(null);
@@ -33,7 +35,7 @@ export default function TerritoryMap({ dailyAreas, availableDates }: Props) {
     if (!currentDate) return;
     let cancelled = false;
     setLoading(true);
-    loadTerritoryGeoJSON(currentDate)
+    loadGeo(currentDate)
       .then((data) => {
         if (!cancelled) setGeoData(data as unknown as GeoJsonObject);
       })
