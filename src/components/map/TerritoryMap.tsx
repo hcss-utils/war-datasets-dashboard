@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet';
+import L from 'leaflet';
 import { useDashboard } from '../../context/DashboardContext';
 import { loadTerritoryGeoJSON, loadDeepStateGeoJSON } from '../../data/loader';
 import TimeSlider from './TimeSlider';
@@ -14,6 +15,21 @@ const LAYER_META: Record<string, { label: string; color: string }> = {
   kursk_russian_advances: { label: 'Kursk (RU advances)', color: '#a855f7' },
 };
 const ALL_LAYERS = Object.keys(LAYER_META);
+
+// Fit the map to the loaded territory: once per dataset load, and again when `fitKey`
+// changes (the Fit button). Skips re-fitting on every date step.
+function FitBounds({ data, fitKey }: { data: any; fitKey: string }) {
+  const map = useMap();
+  const last = useRef('');
+  useEffect(() => {
+    if (!data || fitKey === last.current) return;
+    try {
+      const b = L.geoJSON(data).getBounds();
+      if (b.isValid()) { map.fitBounds(b, { padding: [25, 25] }); last.current = fitKey; }
+    } catch { /* ignore invalid geometry */ }
+  }, [data, fitKey, map]);
+  return null;
+}
 
 interface Props {
   dailyAreas: DailyArea[];
@@ -30,6 +46,7 @@ export default function TerritoryMap({ dailyAreas, availableDates, dataset = 'is
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1000); // ms per step
   const [enabledLayers, setEnabledLayers] = useState<Set<string>>(new Set(ALL_LAYERS));
+  const [resetCount, setResetCount] = useState(0);
   const timerRef = useRef<number | null>(null);
 
   // Filter available dates to current date range
@@ -95,21 +112,24 @@ export default function TerritoryMap({ dailyAreas, availableDates, dataset = 'is
 
   return (
     <div className="map-container">
-      {dataset === 'isw' && (
-        <div className="map-layer-toggles" style={{ display: 'flex', gap: '0.9rem', flexWrap: 'wrap', padding: '4px 2px 8px' }}>
-          {ALL_LAYERS.map((lt) => (
-            <label key={lt} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.8rem', color: '#cbd5e1', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={enabledLayers.has(lt)}
-                onChange={() => setEnabledLayers((s) => { const n = new Set(s); if (n.has(lt)) n.delete(lt); else n.add(lt); return n; })}
-              />
-              <span style={{ width: 11, height: 11, background: LAYER_META[lt].color, display: 'inline-block', borderRadius: 2 }} />
-              {LAYER_META[lt].label}
-            </label>
-          ))}
-        </div>
-      )}
+      <div className="map-layer-toggles" style={{ display: 'flex', gap: '0.9rem', flexWrap: 'wrap', alignItems: 'center', padding: '4px 2px 8px' }}>
+        <button
+          onClick={() => setResetCount((c) => c + 1)}
+          title="Reset the view to fit the territory"
+          style={{ padding: '0.25rem 0.7rem', borderRadius: 6, cursor: 'pointer', border: '1px solid #334155', background: 'rgba(148,163,184,0.12)', color: '#cbd5e1', fontSize: '0.8rem' }}
+        >⤢ Fit to territory</button>
+        {dataset === 'isw' && ALL_LAYERS.map((lt) => (
+          <label key={lt} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.8rem', color: '#cbd5e1', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={enabledLayers.has(lt)}
+              onChange={() => setEnabledLayers((s) => { const n = new Set(s); if (n.has(lt)) n.delete(lt); else n.add(lt); return n; })}
+            />
+            <span style={{ width: 11, height: 11, background: LAYER_META[lt].color, display: 'inline-block', borderRadius: 2 }} />
+            {LAYER_META[lt].label}
+          </label>
+        ))}
+      </div>
       <div className="map-wrapper">
         <MapContainer
           center={[48.5, 37.5]}
@@ -121,6 +141,7 @@ export default function TerritoryMap({ dailyAreas, availableDates, dataset = 'is
             attribution='&copy; <a href="https://carto.com/">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
+          <FitBounds data={geoData} fitKey={`${dataset}-${resetCount}`} />
           {geoData && (dataset === 'deepstate'
             ? (
               <GeoJSON
