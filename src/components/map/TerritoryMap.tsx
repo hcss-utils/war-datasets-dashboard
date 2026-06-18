@@ -17,6 +17,12 @@ const LAYER_META: Record<string, { label: string; color: string }> = {
 };
 const ALL_LAYERS = Object.keys(LAYER_META);
 
+// DeepState's own polygon categories (it doesn't have ISW's analytic layers).
+const DS_LAYER_META: Record<string, { label: string; color: string }> = {
+  russian_occupied: { label: 'Russian-occupied', color: '#d62728' },
+  liberated: { label: 'Reclaimed by Ukraine', color: '#0f9d58' },
+};
+
 // Fit the map to the loaded territory: once per dataset load, and again when `fitKey`
 // changes (the Fit button). Skips re-fitting on every date step.
 function FitBounds({ data, fitKey }: { data: any; fitKey: string }) {
@@ -40,13 +46,16 @@ interface Props {
 
 export default function TerritoryMap({ dailyAreas, availableDates, dataset = 'isw' }: Props) {
   const loadGeo = dataset === 'deepstate' ? loadDeepStateGeoJSON : loadTerritoryGeoJSON;
+  const META = dataset === 'deepstate' ? DS_LAYER_META : LAYER_META;
+  const LAYERS = Object.keys(META);
   const { state } = useDashboard();
   const [currentDate, setCurrentDate] = useState(availableDates[0] || '');
   const [geoData, setGeoData] = useState<GeoJsonObject | null>(null);
   const [loading, setLoading] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1000); // ms per step
-  const [enabledLayers, setEnabledLayers] = useState<Set<string>>(new Set(ALL_LAYERS));
+  const [enabledLayers, setEnabledLayers] = useState<Set<string>>(
+    () => new Set(dataset === 'deepstate' ? Object.keys(DS_LAYER_META) : ALL_LAYERS));
   const [resetCount, setResetCount] = useState(0);
   const timerRef = useRef<number | null>(null);
 
@@ -107,7 +116,7 @@ export default function TerritoryMap({ dailyAreas, availableDates, dataset = 'is
     }
   }
   const layerStyle = (lt: string) => () => {
-    const color = LAYER_META[lt]?.color || '#d62728';
+    const color = META[lt]?.color || '#d62728';
     return { color, weight: 1.5, fillColor: color, fillOpacity: 0.3 };
   };
 
@@ -119,15 +128,15 @@ export default function TerritoryMap({ dailyAreas, availableDates, dataset = 'is
           title="Reset the view to fit the territory"
           style={{ padding: '0.25rem 0.7rem', borderRadius: 6, cursor: 'pointer', border: '1px solid #334155', background: 'rgba(148,163,184,0.12)', color: '#cbd5e1', fontSize: '0.8rem' }}
         >⤢ Fit to territory</button>
-        {dataset === 'isw' && ALL_LAYERS.map((lt) => (
+        {LAYERS.map((lt) => (
           <label key={lt} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.8rem', color: '#cbd5e1', cursor: 'pointer' }}>
             <input
               type="checkbox"
               checked={enabledLayers.has(lt)}
               onChange={() => setEnabledLayers((s) => { const n = new Set(s); if (n.has(lt)) n.delete(lt); else n.add(lt); return n; })}
             />
-            <span style={{ width: 11, height: 11, background: LAYER_META[lt].color, display: 'inline-block', borderRadius: 2 }} />
-            {LAYER_META[lt].label}
+            <span style={{ width: 11, height: 11, background: META[lt].color, display: 'inline-block', borderRadius: 2 }} />
+            {META[lt].label}
           </label>
         ))}
       </div>
@@ -143,22 +152,13 @@ export default function TerritoryMap({ dailyAreas, availableDates, dataset = 'is
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
           <FitBounds data={geoData} fitKey={`${dataset}-${resetCount}`} />
-          {geoData && (dataset === 'deepstate'
-            ? (
-              <GeoJSON
-                key={`${currentDate}-ds`}
-                data={geoData}
-                style={layerStyle('ukraine_control_map')}
-              />
-            )
-            : ALL_LAYERS.filter((lt) => enabledLayers.has(lt) && byLayer[lt]).map((lt) => (
-              <GeoJSON
-                key={`${currentDate}-${lt}`}
-                data={byLayer[lt] as GeoJsonObject}
-                style={layerStyle(lt)}
-              />
-            ))
-          )}
+          {geoData && LAYERS.filter((lt) => enabledLayers.has(lt) && byLayer[lt]).map((lt) => (
+            <GeoJSON
+              key={`${currentDate}-${lt}`}
+              data={byLayer[lt] as GeoJsonObject}
+              style={layerStyle(lt)}
+            />
+          ))}
         </MapContainer>
         <MapLegend currentDate={currentDate} loading={loading} />
       </div>

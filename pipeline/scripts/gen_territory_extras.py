@@ -55,7 +55,8 @@ def main():
             fc = c.execute(text("""
                 SELECT json_build_object('type','FeatureCollection','features',
                   coalesce(json_agg(json_build_object('type','Feature','properties',
-                    json_build_object('name',name,'date',:dd),'geometry',ST_AsGeoJSON(ST_MakeValid(geometry))::json)), '[]'::json))
+                    json_build_object('name',name,'date',:dd,'layer_type',category),
+                    'geometry',ST_AsGeoJSON(ST_MakeValid(geometry))::json)), '[]'::json))
                 FROM territorial_control.deepstate_polygons WHERE date=:dd"""), {"dd": ds_date}).scalar()
             (GJ / f"{mestr}.geojson").write_text(json.dumps(fc))
             gj_count += 1
@@ -89,7 +90,7 @@ def main():
                     WITH isw AS (SELECT ST_Union(ST_MakeValid(cp.geometry)) g FROM isw.control_polygons cp
                                  JOIN isw.shapefile_metadata sm ON sm.id=cp.metadata_id
                                  WHERE sm.layer_type='ukraine_control_map' AND sm.layer_date=:iswd),
-                         ds AS (SELECT ST_Union(ST_MakeValid(geometry)) g FROM territorial_control.deepstate_polygons WHERE date=:dsd)
+                         ds AS (SELECT ST_Union(ST_MakeValid(geometry)) g FROM territorial_control.deepstate_polygons WHERE date=:dsd AND category='russian_occupied')
                     SELECT ST_Area(ST_Transform(isw.g,6933))/1e6 isw_km2,
                            ST_Area(ST_Transform(ds.g,6933))/1e6 ds_km2,
                            ST_Area(ST_Intersection(ST_Transform(isw.g,6933),ST_Transform(ds.g,6933)))/1e6 inter,
