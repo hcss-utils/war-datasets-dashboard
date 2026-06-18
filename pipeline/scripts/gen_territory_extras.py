@@ -18,6 +18,7 @@ load_dotenv("/mnt/g/My Drive/SYSTEM_CREDENTIALS.env")
 ENG = create_engine(os.environ["PG_WARDATASETS_URL"], connect_args={"connect_timeout": 30})
 OUT = Path("/home/stephan/src/war-datasets-dashboard/public/data")
 GJ = OUT / "deepstate_geojson"; GJ.mkdir(parents=True, exist_ok=True)
+GJ_ISW = OUT / "territory_geojson"; GJ_ISW.mkdir(parents=True, exist_ok=True)
 WARMAPPER_CSV = Path("/mnt/g/My Drive/RuBase/Red lines/Datasets/Control of terrain/Maneuver warfare case selection/warmapper_ukraine_monthly.csv")
 PREWAR_KM2 = 42189.911
 
@@ -32,7 +33,7 @@ def month_ends(start_y, start_m, end_y, end_m):
 
 def main():
     months = month_ends(2022, 5, 2026, 6)
-    iou_rows, gj_count = [], 0
+    iou_rows, gj_count, isw_months = [], 0, []
     with ENG.connect() as c:
         for me in months:
             mestr = me.isoformat()
@@ -53,6 +54,19 @@ def main():
                 FROM territorial_control.deepstate_polygons WHERE date=:dd"""), {"dd": ds_date}).scalar()
             (GJ / f"{mestr}.geojson").write_text(json.dumps(fc))
             gj_count += 1
+            # ISW occupied GeoJSON for this month-end (refreshed from PG, aligned monthly)
+            if isw_date:
+                fci = c.execute(text("""
+                    SELECT json_build_object('type','FeatureCollection','features',
+                      coalesce(json_agg(json_build_object('type','Feature','properties',
+                        json_build_object('layer_type','ukraine_control_map','date',:id),
+                        'geometry',ST_AsGeoJSON(ST_MakeValid(cp.geometry))::json)), '[]'::json))
+                    FROM isw.control_polygons cp JOIN isw.shapefile_metadata sm ON sm.id=cp.metadata_id
+                    LEFT JOIN isw.data_quality_flags dq ON dq.metadata_id=sm.id AND dq.exclude_from_analysis
+                    WHERE sm.layer_type='ukraine_control_map' AND sm.layer_date=:id AND dq.id IS NULL"""),
+                    {"id": isw_date}).scalar()
+                (GJ_ISW / f"{mestr}.geojson").write_text(json.dumps(fci))
+                isw_months.append(mestr)
             # monthly IoU (only where both sources present)
             if isw_date:
                 row = c.execute(text("""
@@ -106,6 +120,21 @@ def main():
     import glob
     gj_dates = sorted(os.path.basename(f)[:-8] for f in glob.glob(str(GJ / "*.geojson")))
     (OUT / "deepstate_geojson_dates.json").write_text(json.dumps(gj_dates))
+    (OUT / "isw_geojson_dates.json").write_text(json.dumps(sorted(isw_months)))
+
+    # Refresh metadata.json dateRange to the true data extent (was stale -> capped the slider)
+    meta_path = OUT / "metadata.json"
+    try:
+        meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
+    except Exception:
+        meta = {}
+    ds_dates = [r["date"] for r in level if r["deepstateKm2"] is not None]
+    isw_dates = [r["date"] for r in level if r["iswKm2"] is not None]
+    span = sorted(set(ds_dates) | set(isw_dates))
+    if span:
+        meta["dateRange"] = {"start": span[0], "end": span[-1]}
+        meta_path.write_text(json.dumps(meta))
+        print(f"  metadata.dateRange -> {span[0]} .. {span[-1]}", flush=True)
     print(f"DONE: {gj_count} deepstate geojson; {len(iou_rows)} IoU months (mean {mean_iou}); "
           f"{len(level)} level rows; {len(wm)} warmapper months", flush=True)
 

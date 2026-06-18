@@ -38,6 +38,12 @@ export async function loadDeepStateMapDates(): Promise<string[]> {
   return res.json();
 }
 
+export async function loadIswMapDates(): Promise<string[]> {
+  const res = await fetch(`${BASE_URL}/isw_geojson_dates.json`);
+  if (!res.ok) throw new Error(`Failed to load ISW map dates: ${res.status}`);
+  return res.json();
+}
+
 export async function loadKurskGeoJSON(date: string): Promise<GeoJSONFeatureCollection> {
   const res = await fetch(`${BASE_URL}/kursk_geojson/${date}.geojson`);
   if (!res.ok) throw new Error(`Failed to load Kursk GeoJSON for ${date}: ${res.status}`);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import TerritoryMap from './TerritoryMap';
 import TerritoryComparison from './TerritoryComparison';
-import { loadDeepStateMapDates } from '../../data/loader';
+import { loadDeepStateMapDates, loadIswMapDates } from '../../data/loader';
 import type { DailyArea } from '../../types';
 
 type MapView = 'isw' | 'deepstate' | 'comparison';
@@ -20,10 +20,15 @@ const TABS: { id: MapView; label: string }[] = [
 export default function MapTab({ dailyAreas, iswDates }: Props) {
   const [view, setView] = useState<MapView>('isw');
   const [dsDates, setDsDates] = useState<string[]>([]);
+  const [iswMapDates, setIswMapDates] = useState<string[]>([]);
 
   useEffect(() => {
     loadDeepStateMapDates().then(setDsDates).catch(() => setDsDates([]));
+    loadIswMapDates().then(setIswMapDates).catch(() => setIswMapDates([]));
   }, []);
+
+  const iswActive = iswMapDates.length ? iswMapDates : iswDates;
+  const cov = (ds: string[]) => (ds.length ? ` (${ds[0]} → ${ds[ds.length - 1]}, ${ds.length} snapshots)` : '');
 
   return (
     <div className="map-tab">
@@ -48,12 +53,12 @@ export default function MapTab({ dailyAreas, iswDates }: Props) {
       </div>
 
       <p className="tab-subtitle" style={{ marginTop: 0 }}>
-        {view === 'isw' && 'ISW assessed control-of-terrain (analyst, conservative; per editorial-redraw dates).'}
-        {view === 'deepstate' && 'DeepState OSINT occupied territory (genuinely daily; monthly snapshots shown).'}
+        {view === 'isw' && `ISW assessed control-of-terrain (analyst, conservative)${cov(iswActive)}`}
+        {view === 'deepstate' && `DeepState OSINT occupied territory (genuinely daily; monthly snapshots)${cov(dsDates)}`}
         {view === 'comparison' && 'How ISW and DeepState correspond, with War Mapper as a third cross-check.'}
       </p>
 
-      {view === 'isw' && <TerritoryMap key="isw" dataset="isw" dailyAreas={dailyAreas} availableDates={iswDates} />}
+      {view === 'isw' && <TerritoryMap key="isw" dataset="isw" dailyAreas={dailyAreas} availableDates={iswActive} />}
       {view === 'deepstate' && (
         dsDates.length
           ? <TerritoryMap key="deepstate" dataset="deepstate" dailyAreas={dailyAreas} availableDates={dsDates} />
