@@ -14,12 +14,17 @@ from datetime import date
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 
-load_dotenv("/mnt/g/My Drive/SYSTEM_CREDENTIALS.env")
+_REPO = Path(__file__).resolve().parents[2]
+# Portable creds: env first, then a repo-local pipeline/.env, then the WSL SYSTEM_CREDENTIALS path.
+for _envp in [os.environ.get("DASH_ENV_FILE"), str(_REPO / "pipeline" / ".env"), "/mnt/g/My Drive/SYSTEM_CREDENTIALS.env"]:
+    if _envp and Path(_envp).exists():
+        load_dotenv(_envp)
 ENG = create_engine(os.environ["PG_WARDATASETS_URL"], connect_args={"connect_timeout": 30})
-OUT = Path("/home/stephan/src/war-datasets-dashboard/public/data")
+OUT = Path(os.environ.get("EXPORT_OUTPUT_DIR", str(_REPO / "public" / "data")))
 GJ = OUT / "deepstate_geojson"; GJ.mkdir(parents=True, exist_ok=True)
 GJ_ISW = OUT / "territory_geojson"; GJ_ISW.mkdir(parents=True, exist_ok=True)
-WARMAPPER_CSV = Path("/mnt/g/My Drive/RuBase/Red lines/Datasets/Control of terrain/Maneuver warfare case selection/warmapper_ukraine_monthly.csv")
+# War Mapper monthly CSV is bundled in the repo so the cron has it (no GDrive dependency).
+WARMAPPER_CSV = Path(os.environ.get("WARMAPPER_CSV", str(_REPO / "pipeline" / "data" / "warmapper_ukraine_monthly.csv")))
 PREWAR_KM2 = 42189.911
 
 def month_ends(start_y, start_m, end_y, end_m):
