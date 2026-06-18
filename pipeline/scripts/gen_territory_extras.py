@@ -94,6 +94,16 @@ def main():
             "SELECT layer_date date, area_km2 FROM isw.clean_daily_areas WHERE layer_type='ukraine_control_map' AND conflict='ukraine'"))}
         ds_lvl = {str(r.date): round(float(r.occupied_km2), 0) for r in c.execute(text(
             "SELECT date, occupied_km2 FROM territorial_control.deepstate_daily_areas"))}
+        # Territory-tab scalar series — emitted here too so the VPS cron is a single,
+        # self-contained territory materialiser (no dependence on the full exporter,
+        # whose non-territory tables live in schemas this DB may not match).
+        _isw_full = c.execute(text("SELECT layer_date AS date, layer_type, area_km2 "
+            "FROM isw.clean_daily_areas WHERE conflict='ukraine' ORDER BY layer_date, layer_type")).fetchall()
+        (OUT / "daily_areas.json").write_text(json.dumps(
+            [{"date": str(r.date), "layerType": r.layer_type, "areaKm2": round(float(r.area_km2), 2)} for r in _isw_full]))
+        _ds_full = c.execute(text("SELECT date, occupied_km2 FROM territorial_control.deepstate_daily_areas ORDER BY date")).fetchall()
+        (OUT / "deepstate_daily_areas.json").write_text(json.dumps(
+            [{"date": str(r.date), "occupiedKm2": round(float(r.occupied_km2), 2)} for r in _ds_full]))
     all_dates = sorted(set(isw_lvl) | set(ds_lvl))
     level = [{"date": d, "iswKm2": isw_lvl.get(d), "deepstateKm2": ds_lvl.get(d)} for d in all_dates]
 

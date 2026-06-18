@@ -26,9 +26,10 @@ export EXPORT_OUTPUT_DIR="${EXPORT_OUTPUT_DIR:-$REPO/public/data}"
 # 1) sync to remote (data + code); untracked .env / .venv-vps survive a hard reset
 git fetch origin main --quiet && git reset --hard origin/main --quiet
 
-# 2) materialise PG -> JSON (each step independent; territory is the critical one)
-"$PYBIN" pipeline/scripts/export_all_dashboard_data.py || echo "WARN: export_all_dashboard_data failed"
-"$PYBIN" pipeline/scripts/gen_territory_extras.py       || echo "WARN: gen_territory_extras failed"
+# 2) materialise the territory data PG -> JSON (self-contained: scalar series +
+#    geojson + correspondence + metadata date-range). The full export_all_dashboard_data.py
+#    (other datasets, in schemas this DB may not match) stays the GitHub Action's job.
+"$PYBIN" pipeline/scripts/gen_territory_extras.py || echo "WARN: gen_territory_extras failed"
 
 # 3) commit + push only data changes (redact any token from output)
 git add public/data
