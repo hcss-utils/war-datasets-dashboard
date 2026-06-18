@@ -1,8 +1,12 @@
 name: Update Data
 
 on:
-  schedule:
-    - cron: '0 10 * * *'  # daily at 10:00 UTC
+  # Scheduled run DISABLED 2026-06-18: the GitHub-hosted runner cannot reach the VPS
+  # Postgres (Hetzner whitelist firewall), so the PG-backed export silently stalled and
+  # the territory data went stale. Materialisation now runs ON the VPS (inside the
+  # firewall) via pipeline/scripts/vps_materialize.sh + cron. Manual dispatch kept.
+  # schedule:
+  #   - cron: '0 10 * * *'
   workflow_dispatch:
 
 jobs:
