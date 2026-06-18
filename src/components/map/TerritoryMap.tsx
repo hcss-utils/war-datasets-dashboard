@@ -12,7 +12,8 @@ const LAYER_META: Record<string, { label: string; color: string }> = {
   ukraine_control_map: { label: 'Russian-occupied', color: '#d62728' },
   russian_advances: { label: 'Russian advances', color: '#f97316' },
   ukrainian_counteroffensives: { label: 'Ukrainian counteroffensives', color: '#3b82f6' },
-  kursk_russian_advances: { label: 'Kursk (RU advances)', color: '#a855f7' },
+  kursk_ukrainian_advances: { label: 'Kursk — UA incursion (into Russia)', color: '#22d3ee' },
+  kursk_russian_advances: { label: 'Kursk — RU reclaim', color: '#a855f7' },
 };
 const ALL_LAYERS = Object.keys(LAYER_META);
 

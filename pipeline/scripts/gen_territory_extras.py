@@ -64,11 +64,11 @@ def main():
             # uses its OWN nearest redraw date <= month-end (>= 2022 to skip bad-parse years).
             fci = c.execute(text("""
                 WITH layers(lt) AS (VALUES ('ukraine_control_map'),('ukrainian_counteroffensives'),
-                                           ('russian_advances'),('kursk_russian_advances')),
+                                           ('russian_advances'),('kursk_ukrainian_advances'),('kursk_russian_advances')),
                 nearest AS (
                   SELECT l.lt, (SELECT max(sm.layer_date) FROM isw.shapefile_metadata sm
                       LEFT JOIN isw.data_quality_flags dq ON dq.metadata_id=sm.id AND dq.exclude_from_analysis
-                      WHERE sm.layer_type=l.lt AND sm.conflict='ukraine' AND dq.id IS NULL
+                      WHERE sm.layer_type=l.lt AND sm.conflict IN ('ukraine','kursk') AND dq.id IS NULL
                         AND sm.layer_date <= :me AND sm.layer_date >= DATE '2022-01-01') AS ld
                   FROM layers l)
                 SELECT json_build_object('type','FeatureCollection','features',
@@ -76,7 +76,7 @@ def main():
                       'properties', json_build_object('layer_type', n.lt, 'date', n.ld),
                       'geometry', ST_AsGeoJSON(ST_MakeValid(cp.geometry))::json)), '[]'::json))
                 FROM nearest n
-                JOIN isw.shapefile_metadata sm ON sm.layer_type=n.lt AND sm.layer_date=n.ld AND sm.conflict='ukraine'
+                JOIN isw.shapefile_metadata sm ON sm.layer_type=n.lt AND sm.layer_date=n.ld AND sm.conflict IN ('ukraine','kursk')
                 JOIN isw.control_polygons cp ON cp.metadata_id=sm.id
                 LEFT JOIN isw.data_quality_flags dq ON dq.metadata_id=sm.id AND dq.exclude_from_analysis
                 WHERE dq.id IS NULL AND n.ld IS NOT NULL"""), {"me": me}).scalar()
