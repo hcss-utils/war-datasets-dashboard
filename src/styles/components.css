@@ -114,14 +114,20 @@ html, body, #root {
 /* Tabs */
 .tab-nav {
   display: flex;
+  flex-wrap: wrap;            /* wrap to more rows when the tabs can't fit one line */
+  justify-content: center;    /* every row of tabs is horizontally centred */
   gap: 0;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--color-border);
-  height: var(--tab-height);
+  min-height: var(--tab-height); /* was fixed height — let it grow with wrapped rows */
 }
 
 .tab-btn {
-  flex: 1;
+  flex: 0 1 auto;            /* content-sized so the centring is visible (was flex:1 = full-stretch) */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tab-height);
   background: none;
   border: none;
   color: var(--text-secondary);
