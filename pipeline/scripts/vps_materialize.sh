@@ -54,4 +54,19 @@ else
       push origin main 2>&1 | sed -E 's#ghp_[A-Za-z0-9_]+#ghp_***#g; s#github_pat_[A-Za-z0-9_]+#github_pat_***#g'
   echo "pushed $(git rev-parse --short HEAD)"
 fi
+
+# 4) build + deploy to the VPS webapp dir so rubase.org/war-datasets-dashboard/ AUTO-REFRESHES
+#    (the house pattern — not just gh-pages, which the push above triggers). Self-contained app:
+#    dist/ includes data/, so a --delete rsync is safe (no external media dirs like the overview app).
+WEBROOT=/stratbase/apps/webapps/war-datasets-dashboard
+if command -v npm >/dev/null 2>&1 && [ -n "$WEBROOT" ] && [ -d "$WEBROOT" ]; then
+  [ -d node_modules ] || npm ci --legacy-peer-deps >/dev/null 2>&1 || echo "WARN: npm ci failed"
+  if npm run build >/tmp/wardash_vps_build.log 2>&1; then
+    rsync -a --delete dist/ "$WEBROOT/" && echo "deployed to rubase.org webapp ($WEBROOT)"
+  else
+    echo "WARN: vite build failed — rubase.org webapp NOT updated"; tail -5 /tmp/wardash_vps_build.log
+  fi
+else
+  echo "WARN: npm or $WEBROOT missing — skipped rubase.org webapp deploy"
+fi
 echo "===== $(date -u +%FT%TZ) done ====="
