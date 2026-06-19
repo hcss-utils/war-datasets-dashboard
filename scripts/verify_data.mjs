@@ -19,17 +19,13 @@ const DIR = argDir && existsSync(argDir) ? argDir
   : existsSync('./dist/data') ? './dist/data'
   : './public/data';
 
-// KNOWN-EMPTY, tracked (not silenced): listed loudly here with a reason + date so the gate
-// stays live for any NEW empty while not wedging deploys on an external-credential blocker.
-// 2026-06-19: both depend on aerial_assaults.missile_attacks, which is EMPTY because
-// pipeline/updaters/missiles.py TRUNCATEs then re-downloads from the Kaggle dataset
-// piterfm/massive-missile-attacks-on-ukraine — and no Kaggle credentials are configured
-// (~/.kaggle/kaggle.json / KAGGLE_KEY absent from SYSTEM_CREDENTIALS). FIX = add Kaggle creds
-// + re-run missiles.py against the war_datasets DB, then DELETE these two lines.
-const ALLOW_EMPTY = new Set([
-  'daily_aerial_threats.json',   // → Aerial Assaults tab (blocked on Kaggle creds, 2026-06-19)
-  'weapon_types_summary.json',   // → weapons chart      (blocked on Kaggle creds, 2026-06-19)
-]);
+// KNOWN-EMPTY, tracked (not silenced): list here ONLY a dataset that is legitimately allowed
+// to be empty, with a reason + date, so the gate stays strict for everything else.
+// (2026-06-19: daily_aerial_threats + weapon_types_summary WERE empty — root cause was the
+// kaggle CLI missing from the VPS venv, so missiles.py truncated then failed to re-download.
+// Fixed by installing kaggle in .venv-vps + re-ingesting 3,791 records; both now carry real
+// data, so they are no longer allow-listed and the gate is fully strict.)
+const ALLOW_EMPTY = new Set([]);
 // Minimum number of dataset files expected, so a catastrophic data-drop also fails.
 const MIN_FILES = 30;
 
