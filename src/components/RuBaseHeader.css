@@ -20,7 +20,7 @@
   display: flex;
   align-items: center;
   gap: 1.25rem;
-  justify-self: start;
+  justify-self: stretch; /* fill column 1 so the nav can centre in the post-logos space (H5/R8) */
   min-width: 0;
 }
 
@@ -101,6 +101,7 @@
   display: flex;
   align-items: center;
   gap: .25rem;
+  margin-inline: auto; /* centre the nav between the logos' right edge and the title's left edge (H5/R8) */
 }
 
 .rb-nav-btn {
