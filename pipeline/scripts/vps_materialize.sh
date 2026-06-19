@@ -31,6 +31,18 @@ git fetch origin main --quiet && git reset --hard origin/main --quiet
 #    (other datasets, in schemas this DB may not match) stays the GitHub Action's job.
 "$PYBIN" pipeline/scripts/gen_territory_extras.py || echo "WARN: gen_territory_extras failed"
 
+# 2b) refresh aerial data from Kaggle + re-export the 2 aerial datasets, so the Aerial Assaults
+#     tab + weapons chart stay fresh (they went empty when the kaggle CLI was missing here, 2026-06-19).
+#     Requires kaggle + pandas in .venv-vps and /root/.kaggle/kaggle.json (both provisioned 2026-06-19).
+( cd pipeline && PATH="$REPO/.venv-vps/bin:$PATH" KAGGLE_CONFIG_DIR="${KAGGLE_CONFIG_DIR:-/root/.kaggle}" \
+    "$PYBIN" update_all_datasets.py --missiles ) || echo "WARN: missiles update failed"
+EXPORT_OUTPUT_DIR="$REPO/public/data" "$PYBIN" -c "
+import sys; sys.path.insert(0,'pipeline/scripts')
+import export_all_dashboard_data as e
+c=e.get_connection(); e.export_daily_aerial_threats(c); e.export_weapon_types(c); c.close()
+print('aerial export ok')
+" || echo "WARN: aerial export failed"
+
 # 3) commit + push only data changes (redact any token from output)
 git add public/data
 if git diff --staged --quiet; then
