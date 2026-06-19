@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify:data": "node scripts/verify_data.mjs"
   },
   "dependencies": {
     "@nivo/heatmap": "^0.87.0",

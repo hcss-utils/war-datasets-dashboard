@@ -24,6 +24,11 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - run: npm run build
 
+      # GATE: refuse to ship empty/all-zero datasets (the blank-Aerial-Assaults-tab class of bug).
+      # Fails the deploy on any NEW empty dataset; known-empty (Kaggle-blocked) are tracked in the script.
+      - name: Verify dataset presence (no empty vizzes)
+        run: node scripts/verify_data.mjs ./dist/data
+
       - name: Deploy to GitHub Pages (hcss-utils — authoritative)
         uses: peaceiris/actions-gh-pages@v3
         with:
