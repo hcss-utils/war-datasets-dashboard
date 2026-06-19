@@ -31,21 +31,33 @@ html, body, #root {
   z-index: 9999;
 }
 
-/* Layout */
-.app-layout {
-  display: grid;
-  grid-template-columns: var(--sidebar-width) 1fr;
-  grid-template-rows: var(--header-height) 1fr;
-  height: calc(100vh - 33px);
-  margin-top: 33px;
+/* Layout — responsive-robust: header self-sizes at the top, body fills the rest
+   (no hardcoded header height, so it stays correct when the header wraps on tablet/mobile). */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh; /* dynamic viewport height — correct on mobile browser chrome */
   overflow: hidden;
 }
 
-.app-layout.no-sidebar {
+.app-shell > .rb-header {
+  flex-shrink: 0;
+}
+
+.app-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  overflow: hidden;
+}
+
+.app-body.no-sidebar {
   grid-template-columns: 1fr;
 }
 
-.app-layout.no-sidebar .app-main {
+.app-body.no-sidebar .app-main {
   grid-column: 1;
 }
 
@@ -683,9 +695,9 @@ html, body, #root {
 
 /* Responsive */
 @media (max-width: 900px) {
-  .app-layout {
+  .app-body {
     grid-template-columns: 1fr;
-    grid-template-rows: var(--header-height) auto 1fr;
+    grid-template-rows: auto 1fr;
   }
 
   .app-sidebar {

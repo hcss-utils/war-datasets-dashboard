@@ -1,15 +1,23 @@
 :root {
-  /* Background */
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-card: #1e2a45;
-  --bg-sidebar: #0f1629;
-  --bg-hover: #253555;
+  /* RuBase canonical palette (RUBASE_WEB_STANDARD H2) */
+  --bg: #0d1f3c;
+  --darkblue: #1a3761;
+  --db: #1a3761;
+  --gold: #dbad50;
+  --lightblue: #82a0bc;
+  --white: #e8edf3;
 
-  /* Text */
-  --text-primary: #e0e0e0;
-  --text-secondary: #a0a0b0;
-  --text-muted: #6a6a7a;
+  /* Background (mapped to RuBase palette) */
+  --bg-primary: #0d1f3c;
+  --bg-secondary: #1a3761;
+  --bg-card: #1a3761;
+  --bg-sidebar: #0a1832;
+  --bg-hover: #25406f;
+
+  /* Text (mapped to RuBase palette) */
+  --text-primary: #e8edf3;
+  --text-secondary: #82a0bc;
+  --text-muted: #5d7799;
 
   /* Chart palette (matching matplotlib figures) */
   --color-territory: #2ca02c;
@@ -32,9 +40,9 @@
   --color-cascade: #ff7f0e;
 
   /* UI */
-  --color-accent: #4fc3f7;
-  --color-border: #2a3a5a;
-  --color-scrollbar: #3a4a6a;
+  --color-accent: #dbad50;
+  --color-border: #2a4a7a;
+  --color-scrollbar: #3a5a8a;
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -42,6 +50,6 @@
 
   /* Layout */
   --sidebar-width: 280px;
-  --header-height: 56px;
+  --header-height: 82px;
   --tab-height: 44px;
 }

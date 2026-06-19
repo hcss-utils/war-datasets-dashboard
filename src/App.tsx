@@ -244,9 +244,6 @@ function DashboardContent() {
 export default function App() {
   return (
     <>
-      <div className="dev-banner">
-        This dashboard is under development. Data and features may change.
-      </div>
       <DashboardProvider>
         <DashboardContent />
       </DashboardProvider>

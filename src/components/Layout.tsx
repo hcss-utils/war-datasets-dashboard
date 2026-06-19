@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import TabNavigation from './TabNavigation';
 import DateRangeFilter from './DateRangeFilter';
 import RelatedResources from './RelatedResources';
+import RuBaseHeader, { DASH_LOGOS } from './RuBaseHeader';
 import type { DailyArea, MilitaryEvent } from '../types';
 
 interface LayoutProps {
@@ -20,39 +21,30 @@ export default function Layout({ dailyAreas, events, children }: LayoutProps) {
   // Only show date range and sidebar for territory-related tabs
   const showSidebar = ['territory', 'events', 'map'].includes(state.activeTab);
 
+  // Robust, responsive layout: the header self-sizes at the top (sticky), and the
+  // body fills whatever height remains — no hardcoded header height, so it stays
+  // correct when the header wraps on tablet/mobile.
   return (
-    <div className={`app-layout ${showSidebar ? '' : 'no-sidebar'}`}>
-      <header className="app-header">
-        <a href="https://hcss.nl/rubase/" target="_blank" rel="noopener noreferrer">
-          <img
-            src={import.meta.env.BASE_URL + 'rubase_logo.svg'}
-            alt="RuBase"
-            className="header-logo"
-          />
-        </a>
-        <div className="header-center">
-          <h1>Ukraine War Data Dashboard</h1>
-          {showSidebar && <span className="date-display">{startStr} — {endStr}</span>}
-        </div>
-        <a href="https://hcss.nl/" target="_blank" rel="noopener noreferrer">
-          <img
-            src={import.meta.env.BASE_URL + 'hcss_logo.svg'}
-            alt="HCSS"
-            className="header-logo"
-          />
-        </a>
-      </header>
-      {showSidebar && (
-        <aside className="app-sidebar">
-          <Sidebar dailyAreas={dailyAreas} events={events} />
-        </aside>
-      )}
-      <div className="app-main">
-        <TabNavigation />
-        <RelatedResources />
-        <DateRangeFilter />
-        <div className="tab-content">
-          {children}
+    <div className="app-shell">
+      <RuBaseHeader
+        title="Russia-Ukraine War"
+        subtitle={showSidebar ? `${startStr} – ${endStr}` : undefined}
+        logos={DASH_LOGOS}
+        assetPrefix={import.meta.env.BASE_URL}
+      />
+      <div className={`app-body ${showSidebar ? '' : 'no-sidebar'}`}>
+        {showSidebar && (
+          <aside className="app-sidebar">
+            <Sidebar dailyAreas={dailyAreas} events={events} />
+          </aside>
+        )}
+        <div className="app-main">
+          <TabNavigation />
+          <RelatedResources />
+          <DateRangeFilter />
+          <div className="tab-content">
+            {children}
+          </div>
         </div>
       </div>
     </div>
