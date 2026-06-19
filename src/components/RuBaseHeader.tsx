@@ -55,7 +55,7 @@ export const DASH_LOGOS: Logos = {
   ],
   right: [
     { href: 'https://www.carnegie.org', src: 'ccny_logo.svg', alt: 'Carnegie Corporation of New York', className: 'logo-ccny' },
-    { href: 'https://www.defensie.nl/organisatie/landmacht', src: 'kl_logo.svg', alt: 'Koninklijke Landmacht (Royal Netherlands Army)', className: 'logo-kl' },
+    { href: 'https://www.defensie.nl/organisatie/landmacht', src: 'clas_mark.svg', alt: 'Koninklijke Landmacht (Royal Netherlands Army) — CLAS mark', className: 'logo-kl logo-clas-mark' },
     { href: 'https://hcss.nl/rubase/', src: 'rubase_logo.svg', alt: 'RuBase' },
   ],
 };
