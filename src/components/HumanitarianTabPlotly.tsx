@@ -7,9 +7,7 @@ import {
   loadRefugeeTotals,
   loadHapiIdpsTotal,
   loadHapiFunding,
-  loadMilitaryCasualties,
 } from '../data/newLoader';
-import type { MilitaryCasualties } from '../data/newLoader';
 import type {
   CasualtyData,
   RefugeeByCountry,
@@ -79,7 +77,6 @@ export default function HumanitarianTabPlotly() {
   const [refugeeTotals, setRefugeeTotals] = useState<RefugeeTotals[]>([]);
   const [idpsTotal, setIdpsTotal] = useState<HapiIdpsTotal[]>([]);
   const [funding, setFunding] = useState<HapiFunding[]>([]);
-  const [military, setMilitary] = useState<MilitaryCasualties | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,8 +100,6 @@ export default function HumanitarianTabPlotly() {
         setError(err.message);
         setLoading(false);
       });
-    // Named military casualties — resilient (don't break the tab if the JSON isn't built yet)
-    loadMilitaryCasualties().then(setMilitary).catch(() => {});
   }, []);
 
   if (loading) {
@@ -187,74 +182,6 @@ export default function HumanitarianTabPlotly() {
     <div className="humanitarian-tab">
       <h2>Humanitarian Impact</h2>
       <p className="tab-subtitle">Civilian casualties, refugees, IDPs, and humanitarian funding</p>
-
-      {military && (
-        <section className="military-casualties" style={{ margin: '0 0 2.5rem' }}>
-          <h3>Military Casualties — named &amp; individually verified</h3>
-          <p className="tab-subtitle" style={{ marginTop: '-0.4rem' }}>
-            Per-soldier, obituary-verified rosters. <strong>UA</strong> (UALosses) has per-record death
-            dates &rarr; a real loss curve. <strong>RU</strong> (Mediazona/BBC) is a names/age/geography
-            roster — its source has <em>no per-record death date</em>, so there is intentionally no RU loss
-            curve (we do not fabricate one).
-          </p>
-
-          <div className="stat-cards humanitarian-stats">
-            <div className="stat-card highlight-red">
-              <span className="stat-value">{fmt(military.ualosses.confirmed_kia_total)}</span>
-              <span className="stat-label">🇺🇦 UA confirmed KIA (UALosses, named)</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-value">{fmt(military.mediazona.total)}</span>
-              <span className="stat-label">🇷🇺 RU named killed (Mediazona) — no dates</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-value">{military.mediazona.mean_age}</span>
-              <span className="stat-label">RU mean age at death</span>
-            </div>
-          </div>
-
-          {military.ualosses.monthly_kia.length > 0 && (
-            <div className="chart-container" style={{ marginTop: '1rem' }}>
-              <Plot
-                data={[{
-                  type: 'scatter', mode: 'lines', x: military.ualosses.monthly_kia.map((m) => m.month),
-                  y: military.ualosses.monthly_kia.map((m) => m.kia),
-                  line: { color: '#4da3ff', width: 2 }, fill: 'tozeroy',
-                  fillcolor: 'rgba(77,163,255,0.15)', name: 'UA confirmed KIA',
-                }]}
-                layout={{
-                  title: 'Ukrainian confirmed KIA by month (UALosses, day-precision death dates)',
-                  paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
-                  font: { color: '#e8edf3' }, height: 340, margin: { t: 50, r: 20, b: 50, l: 60 },
-                  xaxis: { gridcolor: '#22304d' }, yaxis: { gridcolor: '#22304d', title: 'KIA / month' },
-                } as any}
-                config={{ displayModeBar: false, responsive: true } as any}
-                style={{ width: '100%' }}
-                useResizeHandler
-              />
-            </div>
-          )}
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginTop: '1rem' }}>
-            <div style={{ flex: '1 1 280px' }}>
-              <h4 style={{ marginBottom: '0.4rem' }}>🇺🇦 UA records by status</h4>
-              <ul className="region-list">
-                {Object.entries(military.ualosses.by_status).map(([s, n]) => (
-                  <li key={s}><span>{s}</span><strong>{fmt(n)}</strong></li>
-                ))}
-              </ul>
-            </div>
-            <div style={{ flex: '1 1 280px' }}>
-              <h4 style={{ marginBottom: '0.4rem' }}>🇷🇺 RU top home regions (origin)</h4>
-              <ul className="region-list">
-                {military.mediazona.top_regions.slice(0, 8).map((r) => (
-                  <li key={r.region}><span>{r.region}</span><strong>{fmt(r.n)}</strong></li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
-      )}
 
       <div className="stat-cards humanitarian-stats">
         <div className="stat-card highlight-red">
