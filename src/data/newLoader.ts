@@ -193,3 +193,25 @@ export const loadGdeltThreatsByCountry = () => fetchJson<GdeltThreatsByCountry[]
 export const loadGdeltThreatsByCameo = () => fetchJson<GdeltThreatsByCameo[]>('gdelt_threats_by_cameo.json');
 export const loadGdeltThreatsDyadic = () => fetchJson<GdeltThreatsDyadic[]>('gdelt_threats_dyadic.json');
 export const loadGdeltVarxWeekly = () => fetchJson<GdeltVarxWeekly[]>('gdelt_varx_weekly.json');
+
+// --- Named military casualties (UALosses UA + Mediazona RU) ---
+export interface MilitaryCasualties {
+  note: string;
+  ualosses: {
+    source: string;
+    by_status: Record<string, number>;
+    confirmed_kia_total: number;
+    monthly_kia: { month: string; kia: number }[];
+    age_bands: { age_band: number; n: number }[];
+  };
+  mediazona: {
+    source: string;
+    total: number;
+    with_location: number;
+    mean_age: number;
+    top_regions: { region: string; n: number }[];
+    age_bands: { age_band: number; n: number }[];
+    has_dates: boolean;
+  };
+}
+export const loadMilitaryCasualties = () => fetchJson<MilitaryCasualties>('casualties_military.json');

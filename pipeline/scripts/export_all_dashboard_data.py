@@ -388,6 +388,110 @@ def export_weapon_types(conn):
     return data
 
 
+def export_strikes_on_russia(conn):
+    """Export UA->RUS strikes (Novaya militarymap tracker) — the symmetric counterpart to the
+    RU->UKR aerial threats. Pulled live from aerial_assaults.strikes_on_russia (canonical
+    weapon_category + PostGIS depth_from_front_km + territory_class)."""
+    print("\nExporting UA->RUS strikes (strikes_on_russia)...")
+    daily = query_to_list(conn, """
+        SELECT event_date::text AS date,
+            COUNT(*)::int AS total,
+            COUNT(*) FILTER (WHERE outcome='intercepted' OR intercepted)::int AS intercepted,
+            COUNT(*) FILTER (WHERE depth_from_front_km > 600)::int AS deep,
+            COUNT(*) FILTER (WHERE western_supplied)::int AS western_supplied
+        FROM aerial_assaults.strikes_on_russia
+        GROUP BY event_date ORDER BY date
+    """)
+    by_weapon = query_to_list(conn, """
+        SELECT weapon_category, COUNT(*)::int AS n
+        FROM aerial_assaults.strikes_on_russia
+        WHERE weapon_category IS NOT NULL GROUP BY 1 ORDER BY 2 DESC
+    """)
+    by_territory = query_to_list(conn, """
+        SELECT territory_class, COUNT(*)::int AS n
+        FROM aerial_assaults.strikes_on_russia GROUP BY 1 ORDER BY 2 DESC
+    """)
+    by_depth = query_to_list(conn, """
+        SELECT CASE WHEN depth_from_front_km < 25 THEN '<25 km (frontline)'
+                    WHEN depth_from_front_km < 100 THEN '25-100 km'
+                    WHEN depth_from_front_km < 300 THEN '100-300 km'
+                    WHEN depth_from_front_km < 600 THEN '300-600 km'
+                    ELSE '>600 km (deep)' END AS band, COUNT(*)::int AS n
+        FROM aerial_assaults.strikes_on_russia
+        WHERE depth_from_front_km IS NOT NULL GROUP BY 1
+    """)
+    by_target = query_to_list(conn, """
+        SELECT target_category, COUNT(*)::int AS n
+        FROM aerial_assaults.strikes_on_russia
+        WHERE target_category IS NOT NULL GROUP BY 1 ORDER BY 2 DESC
+    """)
+    data = {'daily': daily, 'by_weapon': by_weapon, 'by_territory': by_territory,
+            'by_depth': by_depth, 'by_target': by_target}
+    save_json(data, 'strikes_on_russia.json')
+    return data
+
+
+# Canonical dataset registry — every dashboard dataset, its source + table + event-date expr.
+# The catalog export computes REAL COUNT(*) + MIN/MAX date per row, so Overview/Sources are
+# never hardcoded or stale. (name, category, source, schema.table, date_sql_expr or None)
+DATASET_REGISTRY = [
+    ("ACLED conflict events", "Conflict", "ACLED", "conflict_events.acled_events", "event_date"),
+    ("UCDP GED events", "Conflict", "UCDP", "conflict_events.ucdp_events", "date_start::date"),
+    ("VIINA events", "Conflict", "VIINA (Yale)", "conflict_events.viina_events", "TO_DATE(date::text,'YYYYMMDD')"),
+    ("Bellingcat civilian harm", "Conflict", "Bellingcat", "conflict_events.bellingcat_harm", "date"),
+    ("LiveUAMap events", "Conflict", "LiveUAMap", "conflict_events.liveuamap_events", "event_date"),
+    ("Aerial assaults on Ukraine (RU→UKR)", "Aerial", "Ukrainian Air Force / PetroIvaniuk", "aerial_assaults.strikes_on_ukraine", "time_start::date"),
+    ("Strikes on Russia (UA→RUS)", "Aerial", "Novaya Gazeta militarymap", "aerial_assaults.strikes_on_russia", "event_date"),
+    ("Equipment losses (daily)", "Losses", "PetroIvaniuk / Oryx", "equipment_losses.equipment_daily", "date"),
+    ("Personnel losses (daily)", "Losses", "Ukraine MoD / KIU", "equipment_losses.personnel_daily", "date"),
+    ("Equipment — Oryx (visually confirmed)", "Losses", "Oryx", "equipment_losses.equipment_oryx", None),
+    ("Civilian casualties — OHCHR", "Humanitarian", "OHCHR", "casualties.ohchr_casualties", "make_date(year,month,1)"),
+    ("Civilian attacks — NYT", "Humanitarian", "New York Times", "casualties.nyt_civilian_attacks", "attack_date"),
+    ("GDELT events", "Discourse", "GDELT", "global_events.gdelt_events", "TO_DATE(sqldate::text,'YYYYMMDD')"),
+    ("GDELT coercive quotations", "Discourse", "GDELT GKG", "global_events.gdelt_gkg_coercive_quotations", "TO_DATE(LEFT(date::text,8),'YYYYMMDD')"),
+    ("GDELT red-line quotations", "Discourse", "GDELT GKG", "global_events.gdelt_gkg_redline_quotations", "TO_DATE(LEFT(date::text,8),'YYYYMMDD')"),
+    ("Wikipedia war events", "Discourse", "Wikipedia", "global_events.wikipedia_events", "event_date"),
+    ("Gas flows (EU)", "Economic", "Bruegel", "economic_data.bruegel_gas_flows", "date"),
+    ("Russian fossil-fuel revenue", "Economic", "CREA", "economic_data.crea_russia_fossil", "date"),
+    ("Military expenditure", "Economic", "SIPRI", "economic_data.sipri_military_expenditure", "make_date(year::int,1,1)"),
+    ("Kiel aid to Ukraine", "Economic", "Kiel Institute", "economic_data.kiel_ukraine_aid", "announcement_date_clean::date"),
+    ("EU sanctions targets", "Economic", "OpenSanctions", "economic_data.opensanctions_eu", None),
+    ("World Bank GDP", "Economic", "World Bank", "economic_data.world_bank_gdp", "make_date(year::int,1,1)"),
+    ("Cyber incidents", "Sabotage", "EuRepoC", "western_sabotage.eurepoc_cyber_incidents", "CASE WHEN start_date ~ '^[0-9]{2}\\.[0-9]{2}\\.[0-9]{4}$' THEN TO_DATE(start_date,'DD.MM.YYYY') END"),
+    ("Disinformation cases", "Sabotage", "EUvsDisinfo", "western_sabotage.euvsdisinfo_disinfo_cases", "CASE WHEN case_date ~ '^[0-9]{2}\\.[0-9]{2}\\.[0-9]{4}$' THEN TO_DATE(case_date,'DD.MM.YYYY') END"),
+    ("Baltic cable incidents", "Sabotage", "OSINT/Leiden", "western_sabotage.baltic_cable_incidents", "incident_date::date"),
+    ("Territorial control — DeepState", "Territory", "DeepState", "territorial_control.deepstate_snapshots", "date"),
+    ("Refugees (HAPI)", "Humanitarian", "UNHCR via HDX HAPI", "humanitarian.hapi_refugees", None),
+    ("IDPs (HAPI)", "Humanitarian", "IOM via HDX HAPI", "humanitarian.hapi_idps", None),
+    ("Asylum applications", "Humanitarian", "UNHCR", "humanitarian.unhcr_asylum_applications", "make_date(year::int,1,1)"),
+]
+
+
+def export_datasets_catalog(conn):
+    """Materialize a complete per-dataset catalog (REAL row counts + date ranges from the DB).
+    Read by the Overview + Sources tabs so neither is ever hardcoded/stale."""
+    print("\nExporting datasets catalog (all datasets, real counts + ranges)...")
+    rows = []
+    for name, cat, src, tbl, dexpr in DATASET_REGISTRY:
+        entry = {"dataset": name, "category": cat, "source": src, "table": tbl,
+                 "n_rows": None, "date_start": None, "date_end": None}
+        try:
+            if dexpr:
+                r = query_one(conn, f"SELECT COUNT(*) AS n, MIN({dexpr}) AS mn, MAX({dexpr}) AS mx FROM {tbl}")
+                entry["n_rows"] = int(r["n"]); entry["date_start"] = str(r["mn"]) if r["mn"] else None
+                entry["date_end"] = str(r["mx"]) if r["mx"] else None
+            else:
+                r = query_one(conn, f"SELECT COUNT(*) AS n FROM {tbl}")
+                entry["n_rows"] = int(r["n"])
+        except Exception as e:
+            conn.rollback(); entry["error"] = str(e).splitlines()[0][:80]
+        rows.append(entry)
+    data = {"datasets": rows, "total_rows": sum(r["n_rows"] or 0 for r in rows),
+            "export_timestamp": datetime.now().isoformat()}
+    save_json(data, "datasets_catalog.json")
+    return data
+
+
 def export_equipment_daily(conn):
     """Export daily equipment loss data."""
     print("\n[8/15] Exporting equipment daily...")
@@ -451,6 +555,50 @@ def export_casualties_ohchr(conn):
 
     save_json(data, 'casualties_ohchr.json')
     return data
+
+
+def export_casualties_military(conn):
+    """Export NAMED, obituary-verified MILITARY casualties — the quality (per-soldier) sources.
+
+    UA side (UALosses, casualties.ualosses_kia): per-record death dates -> a real monthly loss curve.
+    RU side (Mediazona g200w, casualties.mediazona_roster): names+ages+home geography ONLY — the source
+    has NO per-record death date, so there is intentionally NO RU loss curve (do not fabricate one)."""
+    print("\n[10b/15] Exporting military (named) casualties — UALosses + Mediazona...")
+    out = {"note": "Named per-soldier sources. UA (UALosses) has death dates -> loss curve; "
+                    "RU (Mediazona) is a names/age/geo roster with NO per-record death date."}
+
+    # --- UA: UALosses ---
+    ua_status = query_to_list(conn, "SELECT status, count(*) n FROM casualties.ualosses_kia GROUP BY 1 ORDER BY n DESC")
+    # monthly CONFIRMED-KIA loss curve: status=dead, day-precision dates only (honest)
+    ua_curve = query_to_list(conn, """
+        SELECT to_char(date_trunc('month', dod), 'YYYY-MM') AS month, count(*) AS kia
+        FROM casualties.ualosses_kia
+        WHERE status='dead' AND dod_precision='day' AND dod >= DATE '2022-02-01' AND dod <= now()
+        GROUP BY 1 ORDER BY 1""")
+    ua_ages = query_to_list(conn, """
+        WITH a AS (SELECT (extract(year FROM age(dod, dob)))::int AS age FROM casualties.ualosses_kia
+                   WHERE status='dead' AND dob IS NOT NULL AND dod IS NOT NULL)
+        SELECT (age/5)*5 AS age_band, count(*) n FROM a WHERE age BETWEEN 16 AND 80 GROUP BY 1 ORDER BY 1""")
+    out["ualosses"] = {
+        "source": "ualosses.org (named, obituary-verified)",
+        "by_status": {r["status"]: r["n"] for r in ua_status},
+        "confirmed_kia_total": sum(r["n"] for r in ua_status if r["status"] == "dead"),
+        "monthly_kia": ua_curve, "age_bands": ua_ages}
+
+    # --- RU: Mediazona roster (NO dates) ---
+    ru = query_to_list(conn, """SELECT count(*) total, count(home_town) with_location,
+        round(avg(age),1) mean_age FROM casualties.mediazona_roster""")[0]
+    ru_regions = query_to_list(conn, """SELECT home_town AS region, count(*) n FROM casualties.mediazona_roster
+        WHERE home_town IS NOT NULL GROUP BY 1 ORDER BY n DESC LIMIT 20""")
+    ru_ages = query_to_list(conn, """SELECT (age/5)*5 AS age_band, count(*) n FROM casualties.mediazona_roster
+        WHERE age BETWEEN 16 AND 80 GROUP BY 1 ORDER BY 1""")
+    out["mediazona"] = {
+        "source": "mediazona 200.zona.media (g200w; named, BBC-Russian-verified)",
+        "total": ru["total"], "with_location": ru["with_location"], "mean_age": float(ru["mean_age"] or 0),
+        "top_regions": ru_regions, "age_bands": ru_ages, "has_dates": False}
+
+    save_json(out, 'casualties_military.json')
+    return out
 
 
 def export_refugees_by_country(conn):
@@ -1963,9 +2111,12 @@ def main():
         export_monthly_events(conn)
         export_daily_aerial_threats(conn)
         export_weapon_types(conn)
+        export_strikes_on_russia(conn)
+        export_datasets_catalog(conn)
         export_equipment_daily(conn)
         export_personnel_daily(conn)
         export_casualties_ohchr(conn)
+        export_casualties_military(conn)
         export_refugees_by_country(conn)
         export_refugee_totals(conn)
         export_viina_events(conn)
