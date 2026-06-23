@@ -65,8 +65,9 @@ def parse_page(htmltext):
                      "location": location})
     return recs
 
-def fetch(page):
-    req = urllib.request.Request(BASE.format(page), headers={"User-Agent": UA})
+def fetch(page, sort=None):
+    url = BASE.format(page) + (f"&sort={sort}" if sort else "")
+    req = urllib.request.Request(url, headers={"User-Agent": UA})
     return urllib.request.urlopen(req, timeout=40).read().decode("utf-8", "replace")
 
 def last_page():
@@ -92,12 +93,17 @@ def main():
     else:
         lp = last_page(); print(f"last page: {lp}", flush=True); pages = range(1, lp+1)
 
+    # INCREMENTAL: order by death-date DESC so newly-added records (overwhelmingly recent deaths) cluster
+    # at the FRONT, then walk pages until 2 CONSECUTIVE all-known pages (grace for a new record sitting just
+    # past a known one). Catches the daily additions in ~a handful of pages instead of all 2130. Rare
+    # late-added OLD-death obituaries (deep in -dod order) are swept by the periodic full --reconcile.
+    sort = "-dod" if incremental else None
     out = open(JSONL, "a", encoding="utf-8")
-    total_new = 0
+    total_new = 0; clean_streak = 0
     for p in pages:
         if p in done and not incremental: continue
         try:
-            recs = parse_page(fetch(p))
+            recs = parse_page(fetch(p, sort))
         except Exception as e:
             print(f"page {p}: ERROR {e}", flush=True); time.sleep(3); continue
         new = [r for r in recs if r["slug"] not in known]
@@ -108,8 +114,10 @@ def main():
             with open(DONE, "a") as d: d.write(f"{p}\n")
         if p % 25 == 0 or incremental:
             print(f"page {p}: {len(recs)} recs ({len(new)} new) | total_new={total_new} | known={len(known)}", flush=True)
-        if incremental and recs and not new:
-            print("incremental: hit all-known page, stopping", flush=True); break
+        if incremental:
+            clean_streak = clean_streak + 1 if (recs and not new) else 0
+            if clean_streak >= 2:
+                print(f"incremental: 2 consecutive all-known pages — stopping (added {total_new})", flush=True); break
         if not recs:
             print(f"page {p}: empty — stopping", flush=True); break
         time.sleep(DELAY)
