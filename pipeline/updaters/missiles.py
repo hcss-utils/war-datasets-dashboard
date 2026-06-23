@@ -18,7 +18,7 @@ from .base import BaseUpdater
 
 KAGGLE_DATASET = "piterfm/massive-missile-attacks-on-ukraine"
 
-TABLE = "aerial_assaults.missile_attacks"
+TABLE = "aerial_assaults.strikes_on_ukraine"
 COLUMNS = [
     "time_start", "time_end", "model", "launch_place", "target", "target_main",
     "launched", "destroyed", "not_reach_goal", "still_attacking",
