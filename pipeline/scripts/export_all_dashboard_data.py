@@ -169,14 +169,10 @@ def export_overview_stats(conn):
     """)
     stats['totals']['total_personnel'] = row['personnel'] or 0
 
-    # OHCHR casualties
+    # OHCHR casualties — CURRENT authoritative cumulative (since 24 Feb 2022), not the frozen 2016-2021 slice
     row = query_one(conn, """
-        SELECT
-            COALESCE(SUM(killed), 0) as killed,
-            COALESCE(SUM(injured), 0) as injured,
-            MIN(make_date(year, month, 1)) as min_date,
-            MAX(make_date(year, month, 1)) as max_date
-        FROM casualties.ohchr_casualties
+        SELECT killed, injured, DATE '2022-02-24' as min_date, as_of as max_date
+        FROM casualties.ohchr_cumulative ORDER BY as_of DESC LIMIT 1
     """)
     stats['totals']['ohchr_killed'] = row['killed'] or 0
     stats['totals']['ohchr_injured'] = row['injured'] or 0
@@ -621,6 +617,23 @@ def export_casualties_military(conn):
                     "methodologically-transparent timeline + side split. deaths_a=RU forces, deaths_b=UA forces."}
 
     save_json(out, 'casualties_military.json')
+    return out
+
+
+def export_casualties_civilian(conn):
+    """Export CURRENT OHCHR civilian casualties (replaces the frozen-2021 HDX slice).
+    Authoritative cumulative + territory/cause splits + the verified recent monthly series."""
+    print("\n[10c/15] Exporting current OHCHR civilian casualties...")
+    cum = query_to_list(conn, """SELECT to_char(as_of,'YYYY-MM-DD') as_of, killed, injured,
+        gca_killed, gca_injured, ngca_killed, ngca_injured,
+        cause_explosive_wide, cause_mines, cause_small_arms, cause_note, note, source
+        FROM casualties.ohchr_cumulative ORDER BY as_of DESC LIMIT 1""")
+    monthly = query_to_list(conn, """SELECT to_char(month,'YYYY-MM') AS month, killed, injured
+        FROM casualties.ohchr_current_monthly ORDER BY month""")
+    out = {"cumulative": cum[0] if cum else None, "monthly": monthly,
+           "note": "OHCHR HRMMU confirmed minimums (real toll substantially higher). Monthly series is the "
+                   "verified recent window; OHCHR does not publish a machine-readable full back-series."}
+    save_json(out, 'casualties_civilian.json')
     return out
 
 
@@ -2140,6 +2153,7 @@ def main():
         export_personnel_daily(conn)
         export_casualties_ohchr(conn)
         export_casualties_military(conn)
+        export_casualties_civilian(conn)
         export_refugees_by_country(conn)
         export_refugee_totals(conn)
         export_viina_events(conn)

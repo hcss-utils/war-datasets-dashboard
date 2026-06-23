@@ -226,3 +226,16 @@ export interface MilitaryCasualties {
   };
 }
 export const loadMilitaryCasualties = () => fetchJson<MilitaryCasualties>('casualties_military.json');
+
+// --- Current OHCHR civilian casualties (replaces the frozen-2021 slice) ---
+export interface CivilianCasualties {
+  cumulative: {
+    as_of: string; killed: number; injured: number;
+    gca_killed: number; gca_injured: number; ngca_killed: number; ngca_injured: number;
+    cause_explosive_wide: number; cause_mines: number; cause_small_arms: number;
+    cause_note: string; note: string; source: string;
+  } | null;
+  monthly: { month: string; killed: number; injured: number }[];
+  note: string;
+}
+export const loadCivilianCasualties = () => fetchJson<CivilianCasualties>('casualties_civilian.json');

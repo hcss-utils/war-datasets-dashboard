@@ -7,7 +7,9 @@ import {
   loadRefugeeTotals,
   loadHapiIdpsTotal,
   loadHapiFunding,
+  loadCivilianCasualties,
 } from '../data/newLoader';
+import type { CivilianCasualties } from '../data/newLoader';
 import type {
   CasualtyData,
   RefugeeByCountry,
@@ -77,6 +79,7 @@ export default function HumanitarianTabPlotly() {
   const [refugeeTotals, setRefugeeTotals] = useState<RefugeeTotals[]>([]);
   const [idpsTotal, setIdpsTotal] = useState<HapiIdpsTotal[]>([]);
   const [funding, setFunding] = useState<HapiFunding[]>([]);
+  const [civ, setCiv] = useState<CivilianCasualties | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,6 +103,8 @@ export default function HumanitarianTabPlotly() {
         setError(err.message);
         setLoading(false);
       });
+    // Current OHCHR civilian figures (resilient — the frozen casualties_ohchr.json still drives the legacy charts)
+    loadCivilianCasualties().then(setCiv).catch(() => {});
   }, []);
 
   if (loading) {
@@ -182,6 +187,53 @@ export default function HumanitarianTabPlotly() {
     <div className="humanitarian-tab">
       <h2>Humanitarian Impact</h2>
       <p className="tab-subtitle">Civilian casualties, refugees, IDPs, and humanitarian funding</p>
+
+      {civ?.cumulative && (
+        <section className="ohchr-current" style={{ margin: '0 0 2rem' }}>
+          <h3>Civilian casualties — OHCHR (current, as of {civ.cumulative.as_of})</h3>
+          <p className="tab-subtitle" style={{ marginTop: '-0.4rem' }}>
+            Authoritative UN figures since 24 Feb 2022 — a <strong>confirmed minimum</strong> (OHCHR states the
+            real toll is substantially higher). Replaces the older 2016–2021 dataset.
+          </p>
+          <div className="stat-cards humanitarian-stats">
+            <div className="stat-card highlight-red">
+              <span className="stat-value">{fmt(civ.cumulative.killed)}</span>
+              <span className="stat-label">Civilians killed (cumulative)</span>
+            </div>
+            <div className="stat-card">
+              <span className="stat-value">{fmt(civ.cumulative.injured)}</span>
+              <span className="stat-label">Civilians injured (cumulative)</span>
+            </div>
+            <div className="stat-card">
+              <span className="stat-value">{fmt(civ.cumulative.gca_killed + civ.cumulative.gca_injured)}</span>
+              <span className="stat-label">In Ukraine-controlled territory</span>
+            </div>
+            <div className="stat-card">
+              <span className="stat-value">{fmt(civ.cumulative.ngca_killed + civ.cumulative.ngca_injured)}</span>
+              <span className="stat-label">In Russian-controlled territory</span>
+            </div>
+          </div>
+          {civ.monthly.length > 0 && (
+            <div className="chart-container" style={{ marginTop: '1rem' }}>
+              <Plot
+                data={[
+                  { type: 'bar', name: 'Killed', x: civ.monthly.map((m) => m.month), y: civ.monthly.map((m) => m.killed), marker: { color: '#ef4444' } } as any,
+                  { type: 'bar', name: 'Injured', x: civ.monthly.map((m) => m.month), y: civ.monthly.map((m) => m.injured), marker: { color: '#f59e0b' } } as any,
+                ]}
+                layout={{ ...darkLayout, barmode: 'group', title: 'Recent monthly civilian casualties (OHCHR, verified)', height: 320, margin: { t: 50, r: 20, b: 50, l: 60 } } as any}
+                config={{ displayModeBar: false, responsive: true } as any}
+                style={{ width: '100%' }}
+                onRelayout={onRelayout}
+              />
+            </div>
+          )}
+          <p className="chart-note" style={{ opacity: 0.85 }}>
+            ⓘ Deaths by cause (through 31 Dec 2025): explosive weapons with wide-area effects {fmt(civ.cumulative.cause_explosive_wide)} ·
+            mines/ERW {fmt(civ.cumulative.cause_mines)} · small arms {fmt(civ.cumulative.cause_small_arms)}.
+            OHCHR publishes no machine-readable full monthly back-series — the chart shows the verified recent window.
+          </p>
+        </section>
+      )}
 
       <div className="stat-cards humanitarian-stats">
         <div className="stat-card highlight-red">
