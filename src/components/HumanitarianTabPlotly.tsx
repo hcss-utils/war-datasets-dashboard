@@ -220,7 +220,7 @@ export default function HumanitarianTabPlotly() {
                   { type: 'bar', name: 'Killed', x: civ.monthly.map((m) => m.month), y: civ.monthly.map((m) => m.killed), marker: { color: '#ef4444' } } as any,
                   { type: 'bar', name: 'Injured', x: civ.monthly.map((m) => m.month), y: civ.monthly.map((m) => m.injured), marker: { color: '#f59e0b' } } as any,
                 ]}
-                layout={{ ...darkLayout, barmode: 'group', title: 'Recent monthly civilian casualties (OHCHR, verified)', height: 320, margin: { t: 50, r: 20, b: 50, l: 60 } } as any}
+                layout={{ ...darkLayout, barmode: 'group', title: 'Monthly civilian casualties (OHCHR, Feb 2022 – present)', height: 340, margin: { t: 50, r: 20, b: 50, l: 60 } } as any}
                 config={{ displayModeBar: false, responsive: true } as any}
                 style={{ width: '100%' }}
                 onRelayout={onRelayout}
@@ -228,22 +228,17 @@ export default function HumanitarianTabPlotly() {
             </div>
           )}
           <p className="chart-note" style={{ opacity: 0.85 }}>
-            ⓘ Deaths by cause (through 31 Dec 2025): explosive weapons with wide-area effects {fmt(civ.cumulative.cause_explosive_wide)} ·
-            mines/ERW {fmt(civ.cumulative.cause_mines)} · small arms {fmt(civ.cumulative.cause_small_arms)}.
-            OHCHR publishes no machine-readable full monthly back-series — the chart shows the verified recent window.
+            ⚠️ <strong>March 2022 (3,918 killed) and the surrounding early-invasion months are OHCHR's own
+            explicitly-flagged SEVERE undercounts</strong> — the true toll, above all in Mariupol, is far higher.
+            Each month is OHCHR's count as verified at the time; the series sums to {civ.monthly_sum ? fmt(civ.monthly_sum.killed) : ''} killed
+            / {civ.monthly_sum ? fmt(civ.monthly_sum.injured) : ''} injured, slightly below the {fmt(civ.cumulative.killed)} cumulative
+            (retroactive upward revisions). Deaths by cause (through 31 Dec 2025): explosive weapons with wide-area
+            effects {fmt(civ.cumulative.cause_explosive_wide)} · mines/ERW {fmt(civ.cumulative.cause_mines)} · small arms {fmt(civ.cumulative.cause_small_arms)}.
           </p>
         </section>
       )}
 
       <div className="stat-cards humanitarian-stats">
-        <div className="stat-card highlight-red">
-          <span className="stat-value">{totalKilled.toLocaleString()}</span>
-          <span className="stat-label">Civilians Killed (OHCHR verified)</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{totalInjured.toLocaleString()}</span>
-          <span className="stat-label">Civilians Injured</span>
-        </div>
         <div className="stat-card">
           <span className="stat-value">{latestRefugees?.total_refugees.toLocaleString() || 'N/A'}</span>
           <span className="stat-label">Refugees ({latestYear})</span>
@@ -252,80 +247,6 @@ export default function HumanitarianTabPlotly() {
           <span className="stat-value">{latestIdps?.total_idps?.toLocaleString() || 'N/A'}</span>
           <span className="stat-label">Internally Displaced</span>
         </div>
-      </div>
-
-      {/* Monthly Civilian Casualties - Dual Pane */}
-      <div className="chart-card">
-        <h3>Monthly Civilian Casualties <SourceLink source="OHCHR" /></h3>
-        <p className="chart-note">Top: Monthly counts | Bottom: Month-over-month rate of change (%)</p>
-        <Plot
-          data={[
-            {
-              x: monthlyRateData.map(d => d.month),
-              y: monthlyRateData.map(d => d.killed),
-              type: 'scatter' as const,
-              mode: 'lines' as const,
-              fill: 'tozeroy',
-              name: 'Killed',
-              line: { color: '#ef4444', width: 1 },
-              fillcolor: 'rgba(239, 68, 68, 0.5)',
-              stackgroup: 'one',
-              hoverlabel: { font: { color: '#fff' } },
-            },
-            {
-              x: monthlyRateData.map(d => d.month),
-              y: monthlyRateData.map(d => d.injured),
-              type: 'scatter' as const,
-              mode: 'lines' as const,
-              fill: 'tonexty',
-              name: 'Injured',
-              line: { color: '#f97316', width: 1 },
-              fillcolor: 'rgba(249, 115, 22, 0.5)',
-              stackgroup: 'one',
-              hoverlabel: { font: { color: '#fff' } },
-            },
-          ]}
-          layout={{
-            ...darkLayout,
-            height: 250,
-            xaxis: { ...darkLayout.xaxis, ...(xaxisRange ? { range: xaxisRange } : {}), rangeslider: { visible: true, thickness: 0.08, bgcolor: '#1a1a2e', bordercolor: '#333' } },
-            legend: { ...darkLayout.legend, orientation: 'h' as const, y: 1.15 },
-          }}
-          config={plotConfig}
-          style={{ width: '100%' }}
-          onRelayout={onRelayout}
-        />
-        <Plot
-          data={[
-            {
-              x: monthlyRateData.map(d => d.month),
-              y: monthlyRateData.map(d => d.killed_rate),
-              type: 'scatter' as const,
-              mode: 'lines' as const,
-              name: 'Killed Rate',
-              line: { color: '#ef4444', width: 1.5 },
-              hoverlabel: { font: { color: '#fff' } },
-            },
-            {
-              x: monthlyRateData.map(d => d.month),
-              y: monthlyRateData.map(d => d.injured_rate),
-              type: 'scatter' as const,
-              mode: 'lines' as const,
-              name: 'Injured Rate',
-              line: { color: '#f97316', width: 1.5 },
-              hoverlabel: { font: { color: '#fff' } },
-            },
-          ]}
-          layout={{
-            ...darkLayout,
-            height: 200,
-            margin: { ...darkLayout.margin, t: 10 },
-            yaxis: { ...darkLayout.yaxis, ticksuffix: '%', zeroline: true, zerolinecolor: '#888' },
-            legend: { ...darkLayout.legend, orientation: 'h' as const, y: 1.2 },
-          }}
-          config={plotConfig}
-          style={{ width: '100%' }}
-        />
       </div>
 
       <div className="chart-grid-2">
@@ -392,45 +313,6 @@ export default function HumanitarianTabPlotly() {
       </div>
 
       <div className="chart-grid-2">
-        {/* Casualties by Region */}
-        <div className="chart-card">
-          <h3>Casualties by Region <SourceLink source="OHCHR" /></h3>
-          <Plot
-            data={[
-              {
-                x: regionData.map(d => d.killed),
-                y: regionData.map(d => d.region),
-                type: 'bar' as const,
-                orientation: 'h' as const,
-                name: 'Killed',
-                marker: { color: '#ef4444' },
-                text: regionData.map(d => fmt(d.killed)),
-                textposition: 'outside' as const,
-                textfont: { color: '#888', size: 9 },
-                hoverlabel: { font: { color: '#fff' } },
-              },
-              {
-                x: regionData.map(d => d.injured),
-                y: regionData.map(d => d.region),
-                type: 'bar' as const,
-                orientation: 'h' as const,
-                name: 'Injured',
-                marker: { color: '#f97316' },
-                hoverlabel: { font: { color: '#fff' } },
-              },
-            ]}
-            layout={{
-              ...darkLayout,
-              height: 400,
-              barmode: 'group',
-              margin: { l: 140, r: 60, t: 20, b: 40 },
-              legend: { ...darkLayout.legend, orientation: 'h' as const, y: 1.05 },
-            }}
-            config={{ displayModeBar: false, responsive: true }}
-            style={{ width: '100%' }}
-          />
-        </div>
-
         {/* Top Refugee Destinations */}
         <div className="chart-card">
           <h3>Top Refugee Destinations ({latestYear}) <SourceLink source="UNHCR" /></h3>

@@ -235,7 +235,8 @@ export interface CivilianCasualties {
     cause_explosive_wide: number; cause_mines: number; cause_small_arms: number;
     cause_note: string; note: string; source: string;
   } | null;
-  monthly: { month: string; killed: number; injured: number }[];
+  monthly: { month: string; killed: number; injured: number; undercount?: boolean }[];
+  monthly_sum?: { killed: number; injured: number };
   note: string;
 }
 export const loadCivilianCasualties = () => fetchJson<CivilianCasualties>('casualties_civilian.json');

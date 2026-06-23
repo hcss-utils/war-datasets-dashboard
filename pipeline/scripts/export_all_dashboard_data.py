@@ -628,11 +628,16 @@ def export_casualties_civilian(conn):
         gca_killed, gca_injured, ngca_killed, ngca_injured,
         cause_explosive_wide, cause_mines, cause_small_arms, cause_note, note, source
         FROM casualties.ohchr_cumulative ORDER BY as_of DESC LIMIT 1""")
-    monthly = query_to_list(conn, """SELECT to_char(month,'YYYY-MM') AS month, killed, injured
-        FROM casualties.ohchr_current_monthly ORDER BY month""")
+    monthly = query_to_list(conn, """SELECT to_char(month,'YYYY-MM') AS month, killed, injured,
+        COALESCE(undercount_flag,false) AS undercount FROM casualties.ohchr_current_monthly ORDER BY month""")
     out = {"cumulative": cum[0] if cum else None, "monthly": monthly,
-           "note": "OHCHR HRMMU confirmed minimums (real toll substantially higher). Monthly series is the "
-                   "verified recent window; OHCHR does not publish a machine-readable full back-series."}
+           "monthly_sum": {"killed": sum(m["killed"] for m in monthly), "injured": sum(m["injured"] for m in monthly)},
+           "note": "OHCHR HRMMU confirmed minimums — the real toll is substantially higher. The FULL monthly "
+                   "series (Feb 2022-present) was reconstructed from OHCHR's own monthly reports + per-month "
+                   "charts (no machine-readable feed exists). Each month is OHCHR's count as verified AT THAT "
+                   "TIME, so the series sums slightly below the latest cumulative (retroactive upward revisions). "
+                   "Early 2022 - especially March 2022 (Mariupol) - is OHCHR's own explicitly-flagged SEVERE "
+                   "undercount; the true toll there is far higher."}
     save_json(out, 'casualties_civilian.json')
     return out
 
