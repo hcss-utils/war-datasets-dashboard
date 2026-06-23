@@ -111,7 +111,7 @@ The pipeline monitors 18 database tables across 7 schemas:
 | `ucdp` | `conflict_events.ucdp_events` | `date_start` | UCDP georeferenced event data (31K) |
 | `viina` | `conflict_events.viina_events` | `date` (int YYYYMMDD) | ML-classified news events from 16 outlets (557K) |
 | `bellingcat` | `conflict_events.bellingcat_harm` | `date` | OSINT-verified civilian harm incidents (2.5K) |
-| `missiles` | `aerial_assaults.missile_attacks` | `time_start` | Missile and drone strikes with intercept data (3.4K) |
+| `missiles` | `aerial_assaults.strikes_on_ukraine` | `time_start` | Missile and drone strikes with intercept data (3.4K); `aerial_assaults.missile_attacks` is a compatibility view |
 | `equipment` | `equipment_losses.equipment_daily` | `date` | Daily Russian equipment losses (1.5K) |
 | `personnel` | `equipment_losses.personnel_daily` | `date` | Daily Russian personnel losses (1.5K) |
 | `ohchr` | `casualties.ohchr_casualties` | *(count only)* | UN-verified civilian casualties (71) |

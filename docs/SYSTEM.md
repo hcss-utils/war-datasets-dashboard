@@ -127,7 +127,7 @@ dimension of the Russia-Ukraine conflict:
 | `economic_data.opensanctions_eu` * | OpenSanctions | TRUNCATE + INSERT | CSV download |
 | `economic_data.crea_russia_fossil` * | CREA | Incremental (append) | CREA API |
 | `economic_data.bruegel_gas_flows` * | Bruegel | Incremental (append) | Bruegel ZIP |
-| `aerial_assaults.missile_attacks` * | Missiles | TRUNCATE + INSERT | Kaggle |
+| `aerial_assaults.strikes_on_ukraine` * | Missiles | TRUNCATE + INSERT | Kaggle |
 
 **HAPI humanitarian (8 tables, 1 updater, weekly refresh):**
 
@@ -293,7 +293,7 @@ All batch inserts use `psycopg2.extras.execute_batch()` with `page_size=1000`.
 | Field | Value |
 |-------|-------|
 | Source | Kaggle dataset `piterfm/massive-missile-attacks-on-ukraine` |
-| Table | `aerial_assaults.missile_attacks` |
+| Table | `aerial_assaults.strikes_on_ukraine` (`aerial_assaults.missile_attacks` is a compatibility view) |
 | Method | TRUNCATE + INSERT (~3,500 rows) |
 | Columns | 22 columns: time_start, time_end, model, launch_place, target, launched, destroyed, is_shahed, carrier, affected_region, source, etc. |
 | Auth | Kaggle CLI (`~/.kaggle/kaggle.json`) or REST API fallback |

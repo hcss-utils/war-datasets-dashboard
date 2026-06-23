@@ -60,7 +60,7 @@ ALL_TABLES = {
     "economic_data.opensanctions_eu": {"date_col": "first_seen", "auto": True},
     "economic_data.crea_russia_fossil": {"date_col": "date", "auto": True},
     "economic_data.bruegel_gas_flows": {"date_col": "date", "auto": True},
-    "aerial_assaults.missile_attacks": {"date_col": "time_end", "auto": True},
+    "aerial_assaults.strikes_on_ukraine": {"date_col": "time_end", "auto": True},
     # HAPI humanitarian (weekly refresh from HDX)
     "humanitarian.hapi_food_prices": {"date_col": "reference_period_end", "auto": True},
     "humanitarian.hapi_idps": {"date_col": "reference_period_end", "auto": True},
