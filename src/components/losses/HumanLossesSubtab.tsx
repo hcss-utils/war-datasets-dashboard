@@ -306,14 +306,24 @@ export default function HumanLossesSubtab({ selectedViews }: HumanLossesSubtabPr
               <span className="stat-label">🇺🇦 UA confirmed KIA (UALosses, named)</span>
             </div>
             <div className="stat-card">
-              <span className="stat-value">{fmt(military.mediazona.total)}</span>
-              <span className="stat-label">🇷🇺 RU named killed (Mediazona) — no dates</span>
+              <span className="stat-value">&ge;{fmt(military.mediazona.total)}</span>
+              <span className="stat-label">🇷🇺 RU named killed (Mediazona) — a floor, no dates</span>
             </div>
             <div className="stat-card">
-              <span className="stat-value">{military.mediazona.mean_age}</span>
-              <span className="stat-label">RU mean age at death</span>
+              <span className="stat-value">~{military.mediazona.probate_estimate ? fmt(military.mediazona.probate_estimate) : 'N/A'}</span>
+              <span className="stat-label">🇷🇺 RU est. toll (Probate Registry)</span>
             </div>
           </div>
+
+          {military.mediazona.coverage_note && (
+            <p className="chart-note" style={{ marginTop: '0.6rem', opacity: 0.85 }}>
+              ⓘ RU named ({fmt(military.mediazona.total)}, mean age {military.mediazona.mean_age}) is a{' '}
+              <strong>floor — Mediazona estimate it captures ~{military.mediazona.coverage_pct_range?.[0]}–
+              {military.mediazona.coverage_pct_range?.[1]}%</strong> of the real toll; the fuller figure is the
+              ~{military.mediazona.probate_estimate ? fmt(military.mediazona.probate_estimate) : ''} Probate-Registry
+              estimate. No per-record death dates are published (volunteer security + lag-skewed timing).
+            </p>
+          )}
 
           {military.ualosses.monthly_kia.length > 0 && (
             <div className="chart-container" style={{ marginTop: '1rem' }}>
@@ -334,6 +344,32 @@ export default function HumanLossesSubtab({ selectedViews }: HumanLossesSubtabPr
                 style={{ width: '100%' }}
                 onRelayout={onRelayout}
               />
+              {military.ualosses.lag_note && (
+                <p className="chart-note" style={{ opacity: 0.85 }}>⚠️ {military.ualosses.lag_note}</p>
+              )}
+            </div>
+          )}
+
+          {military.ucdp && military.ucdp.monthly.length > 0 && (
+            <div className="chart-container" style={{ marginTop: '1.25rem' }}>
+              <Plot
+                data={[
+                  { type: 'scatter', mode: 'lines', name: '🇷🇺 RU forces', x: military.ucdp.monthly.map((m) => m.month), y: military.ucdp.monthly.map((m) => m.ru_deaths), line: { color: '#ef4444', width: 2 } } as any,
+                  { type: 'scatter', mode: 'lines', name: '🇺🇦 UA forces', x: military.ucdp.monthly.map((m) => m.month), y: military.ucdp.monthly.map((m) => m.ua_deaths), line: { color: '#4da3ff', width: 2 } } as any,
+                  { type: 'scatter', mode: 'lines', name: 'Civilians', x: military.ucdp.monthly.map((m) => m.month), y: military.ucdp.monthly.map((m) => m.civilian_deaths), line: { color: '#eab308', width: 1.5, dash: 'dot' } } as any,
+                ]}
+                layout={{ ...darkLayout, title: 'Dated fatalities by month, both sides (UCDP GED — event-verified)', height: 360, margin: { t: 50, r: 20, b: 50, l: 60 }, yaxis: { ...darkLayout.yaxis, title: 'Deaths / month' } } as any}
+                config={{ displayModeBar: false, responsive: true } as any}
+                style={{ width: '100%' }}
+                onRelayout={onRelayout}
+              />
+              <p className="chart-note" style={{ opacity: 0.85 }}>
+                ⓘ The only <strong>dated, both-sides</strong> fatality series (fills the RU-timeline gap — Mediazona
+                publishes no per-record dates). UCDP totals over the war: RU {fmt(military.ucdp.totals.ru)} ·
+                UA {fmt(military.ucdp.totals.ua)} · civilian {fmt(military.ucdp.totals.civilian)}.
+                These are <strong>event-verified CONSERVATIVE</strong> counts — well below the named/claimed figures
+                above; use them for timing &amp; the RU/UA split, not absolute magnitude.
+              </p>
             </div>
           )}
 

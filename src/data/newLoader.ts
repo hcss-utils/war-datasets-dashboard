@@ -203,6 +203,7 @@ export interface MilitaryCasualties {
     confirmed_kia_total: number;
     monthly_kia: { month: string; kia: number }[];
     age_bands: { age_band: number; n: number }[];
+    lag_note?: string;
   };
   mediazona: {
     source: string;
@@ -212,6 +213,16 @@ export interface MilitaryCasualties {
     top_regions: { region: string; n: number }[];
     age_bands: { age_band: number; n: number }[];
     has_dates: boolean;
+    coverage_pct_range?: [number, number];
+    probate_estimate?: number;
+    probate_estimate_date?: string;
+    coverage_note?: string;
+  };
+  ucdp?: {
+    source: string;
+    monthly: { month: string; ru_deaths: number; ua_deaths: number; civilian_deaths: number; best_total: number }[];
+    totals: { ru: number; ua: number; civilian: number };
+    note: string;
   };
 }
 export const loadMilitaryCasualties = () => fetchJson<MilitaryCasualties>('casualties_military.json');

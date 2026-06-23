@@ -583,7 +583,10 @@ def export_casualties_military(conn):
         "source": "ualosses.org (named, obituary-verified)",
         "by_status": {r["status"]: r["n"] for r in ua_status},
         "confirmed_kia_total": sum(r["n"] for r in ua_status if r["status"] == "dead"),
-        "monthly_kia": ua_curve, "age_bands": ua_ages}
+        "monthly_kia": ua_curve, "age_bands": ua_ages,
+        # Recent months under-count: obituary/confirmation lag means deaths aren't added immediately,
+        # so the curve's tail drops — an artifact of list incompleteness, NOT a real decline.
+        "lag_note": "Recent months are incomplete (obituary/confirmation lag) — the tail-off is a reporting artifact, not a real decline."}
 
     # --- RU: Mediazona roster (NO dates) ---
     ru = query_to_list(conn, """SELECT count(*) total, count(home_town) with_location,
@@ -595,7 +598,27 @@ def export_casualties_military(conn):
     out["mediazona"] = {
         "source": "mediazona 200.zona.media (g200w; named, BBC-Russian-verified)",
         "total": ru["total"], "with_location": ru["with_location"], "mean_age": float(ru["mean_age"] or 0),
-        "top_regions": ru_regions, "age_bands": ru_ages, "has_dates": False}
+        "top_regions": ru_regions, "age_bands": ru_ages, "has_dates": False,
+        # The named list is a FLOOR: Mediazona estimate it captures ~45-65% of the real toll. The fuller
+        # figure is the Meduza+Mediazona Probate-Registry statistical estimate. No per-record death dates
+        # are published (security for volunteers + the dates are too lag-skewed for a reliable timeline).
+        "coverage_pct_range": [45, 65],
+        "probate_estimate": 352000, "probate_estimate_date": "2026-05-09",
+        "coverage_note": "Named-confirmed FLOOR (~45-65% of the real toll per Mediazona). Fuller toll: "
+                         "the ~352,000 Probate-Registry statistical estimate. No per-record dates published "
+                         "(volunteer security + lag-skewed timing)."}
+
+    # --- UCDP GED: the DATED both-sides fatality timeline (event-verified, conservative) ---
+    ucdp = query_to_list(conn, """
+        SELECT to_char(month,'YYYY-MM') AS month, ru_deaths, ua_deaths, civilian_deaths, best_total
+        FROM casualties.ucdp_ged_monthly ORDER BY month""")
+    if ucdp:
+        c = query_to_list(conn, "SELECT sum(ru_deaths) ru, sum(ua_deaths) ua, sum(civilian_deaths) civ FROM casualties.ucdp_ged_monthly")[0]
+        out["ucdp"] = {
+            "source": "UCDP GED (Uppsala) — event-verified, dated, both sides",
+            "monthly": ucdp, "totals": {"ru": c["ru"], "ua": c["ua"], "civilian": c["civ"]},
+            "note": "Event-verified CONSERVATIVE estimates (far below named/claimed) — included as a dated, "
+                    "methodologically-transparent timeline + side split. deaths_a=RU forces, deaths_b=UA forces."}
 
     save_json(out, 'casualties_military.json')
     return out
