@@ -1,0 +1,110 @@
+.login-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, var(--darkblue, #1a3761), transparent 60%),
+    var(--bg-primary, #0d1f3c);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--bg-card, #1a3761);
+  border: 1px solid var(--color-border, #2a4a7a);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: var(--shadow-card, 0 2px 8px rgba(0, 0, 0, 0.3));
+  padding: 2rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.login-brand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
+
+.login-logo {
+  height: 44px;
+  width: auto;
+}
+
+.login-title {
+  margin: 0;
+  text-align: center;
+  color: var(--text-primary, #e8edf3);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.login-subtitle {
+  margin: -0.4rem 0 0.5rem;
+  text-align: center;
+  color: var(--text-secondary, #82a0bc);
+  font-size: 0.85rem;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.login-field span {
+  color: var(--text-secondary, #82a0bc);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.login-field input {
+  background: var(--bg-primary, #0d1f3c);
+  border: 1px solid var(--color-border, #2a4a7a);
+  border-radius: var(--radius-sm, 4px);
+  color: var(--text-primary, #e8edf3);
+  font-size: 0.95rem;
+  padding: 0.6rem 0.7rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.login-field input:focus {
+  border-color: var(--gold, #dbad50);
+  box-shadow: 0 0 0 2px rgba(219, 173, 80, 0.2);
+}
+
+.login-error {
+  color: #ff6b6b;
+  font-size: 0.82rem;
+  text-align: center;
+  margin-top: -0.25rem;
+}
+
+.login-button {
+  margin-top: 0.5rem;
+  background: var(--gold, #dbad50);
+  color: var(--db, #1a3761);
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 0.65rem;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.05s;
+}
+
+.login-button:hover {
+  filter: brightness(1.08);
+}
+
+.login-button:active {
+  transform: translateY(1px);
+}

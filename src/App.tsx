@@ -14,6 +14,8 @@ import UnifiedAerialTab from './components/UnifiedAerialTab';
 import UnifiedLossesTab from './components/UnifiedLossesTab';
 import HumanitarianTabPlotly from './components/HumanitarianTabPlotly';
 import type { DailyArea, MilitaryEvent, DashboardMetadata } from './types';
+import { isAuthenticated } from './auth/auth';
+import LoginScreen from './auth/LoginScreen';
 
 // Lazy-load the map to avoid SSR issues with Leaflet
 const MapTab = React.lazy(() => import('./components/map/MapTab'));
@@ -242,6 +244,12 @@ function DashboardContent() {
 }
 
 export default function App() {
+  const [authed, setAuthed] = useState(() => isAuthenticated());
+
+  if (!authed) {
+    return <LoginScreen onSuccess={() => setAuthed(true)} />;
+  }
+
   return (
     <>
       <DashboardProvider>
