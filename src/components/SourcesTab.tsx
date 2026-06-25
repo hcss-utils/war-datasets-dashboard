@@ -166,6 +166,31 @@ const DATA_SOURCES: DataSource[] = [
     tables: ['economic_data.kiel_ukraine_aid'],
   },
   {
+    id: 'kiu',
+    name: 'KIU / TopCargo200',
+    fullName: 'Killed in Ukraine - Russian Officers Killed',
+    url: 'https://topcargo200.com',
+    description: 'Static CSV-based roster summary of Russian officers killed in Ukraine, used here for the rank-category officer breakdown.',
+    dateRange: 'Feb 2022 - Present',
+    fallbackRecords: '7,730 officers',
+    spatialResolution: 'Named/person-level source summarized to rank categories',
+    updateFrequency: 'Static CSV refresh via dashboard pipeline',
+    strengths: [
+      'Rank-category breakdown for Russian officer fatalities',
+      'Complements aggregate personnel-loss series',
+      'Source is kept separate from official Ukrainian MoD aggregate claims',
+    ],
+    limitations: [
+      'Dashboard currently exports only summary categories',
+      'Generated from a local static CSV, not included in live database inventory',
+      'Coverage depends on source confirmation and collection lag',
+    ],
+    tables: [
+      'Russian Casualties/KIU_Russian_Officers_Killed.csv',
+      'public/data/kiu_officers_summary.json',
+    ],
+  },
+  {
     id: 'isw',
     name: 'ISW',
     fullName: 'Institute for the Study of War - Conflict Mapping',
@@ -424,7 +449,7 @@ function SourceCard({
       </div>
 
       <div className="source-tables">
-        <span className="tables-label">Database Tables:</span>
+        <span className="tables-label">Tables / Files:</span>
         {source.tables.map((t, i) => (
           <code key={i} className="table-name">{t}</code>
         ))}

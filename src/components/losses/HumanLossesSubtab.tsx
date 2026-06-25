@@ -287,23 +287,31 @@ export default function HumanLossesSubtab({ selectedViews }: HumanLossesSubtabPr
             <Plot
               data={[
                 {
-                  x: officerData.map(d => d.value),
-                  y: officerData.map(d => d.label),
+                  x: officerData.map(d => d.label),
+                  y: officerData.map(d => d.value),
                   type: 'bar' as const,
-                  orientation: 'h' as const,
                   marker: { color: officerData.map(d => d.color) },
                   text: officerData.map(d => fmt(d.value)),
                   textposition: 'outside' as const,
-                  textfont: { color: '#888', size: 11 },
-                  hovertemplate: '%{y}: %{x:,}<extra></extra>',
+                  textfont: { color: '#b0b0b0', size: 11 },
+                  hovertemplate: '%{x}: %{y:,}<extra></extra>',
                   hoverlabel: { font: { color: '#fff' } },
                 },
               ]}
               layout={{
                 ...darkLayout,
                 height: 300,
-                margin: { l: 120, r: 80, t: 20, b: 40 },
-                xaxis: { ...darkLayout.xaxis, tickformat: ',' },
+                margin: { l: 60, r: 30, t: 20, b: 70 },
+                xaxis: {
+                  ...darkLayout.xaxis,
+                  type: 'category' as const,
+                  tickangle: -20,
+                },
+                yaxis: {
+                  ...darkLayout.yaxis,
+                  tickformat: ',',
+                  range: [0, Math.max(...officerData.map(d => d.value)) * 1.18],
+                },
               }}
               config={{ displayModeBar: false, responsive: true }}
               style={{ width: '100%' }}
