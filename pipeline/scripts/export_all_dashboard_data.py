@@ -31,6 +31,7 @@ DB_CONFIG = {
 }
 
 OUTPUT_DIR = Path(os.environ.get('EXPORT_OUTPUT_DIR', str(Path(__file__).parent / 'dashboard' / 'public' / 'data')))
+ACLED_COUNTRY_FILTER = "(iso IN (804, 643) OR country IN ('Ukraine', 'Russia'))"
 
 # CSV/JSON source files for new datasets
 DATA_DIR = Path(__file__).parent
@@ -95,9 +96,10 @@ def export_overview_stats(conn):
     stats = {'totals': {}, 'date_ranges': {}}
 
     # ACLED events
-    row = query_one(conn, """
+    row = query_one(conn, f"""
         SELECT COUNT(*) as count, MIN(event_date) as min_date, MAX(event_date) as max_date
         FROM conflict_events.acled_events
+        WHERE {ACLED_COUNTRY_FILTER}
     """)
     stats['totals']['acled_events'] = row['count']
     stats['date_ranges']['acled_start'] = row['min_date']
@@ -251,10 +253,11 @@ def export_daily_events(conn):
     """Export daily event counts from ACLED and UCDP."""
     print("\n[2/15] Exporting daily events...")
 
-    data = query_to_list(conn, """
+    data = query_to_list(conn, f"""
         WITH acled_daily AS (
             SELECT event_date as date, COUNT(*) as events, COALESCE(SUM(fatalities), 0) as fatalities
             FROM conflict_events.acled_events
+            WHERE {ACLED_COUNTRY_FILTER}
             GROUP BY event_date
         ),
         ucdp_daily AS (
@@ -281,13 +284,14 @@ def export_events_by_type(conn):
     """Export event breakdown by type from ACLED."""
     print("\n[3/15] Exporting events by type...")
 
-    data = query_to_list(conn, """
+    data = query_to_list(conn, f"""
         SELECT
             event_type,
             sub_event_type,
             COUNT(*) as count,
             COALESCE(SUM(fatalities), 0) as fatalities
         FROM conflict_events.acled_events
+        WHERE {ACLED_COUNTRY_FILTER}
         GROUP BY event_type, sub_event_type
         ORDER BY count DESC
     """)
@@ -300,7 +304,7 @@ def export_events_by_region(conn):
     """Export event counts by region from ACLED."""
     print("\n[4/15] Exporting events by region...")
 
-    data = query_to_list(conn, """
+    data = query_to_list(conn, f"""
         SELECT
             admin1 as region,
             COUNT(*) as events,
@@ -308,6 +312,7 @@ def export_events_by_region(conn):
             MIN(event_date) as first_event,
             MAX(event_date) as last_event
         FROM conflict_events.acled_events
+        WHERE {ACLED_COUNTRY_FILTER}
         GROUP BY admin1
         ORDER BY events DESC
     """)
@@ -320,13 +325,14 @@ def export_monthly_events(conn):
     """Export monthly event breakdown by type from ACLED."""
     print("\n[5/15] Exporting monthly events...")
 
-    data = query_to_list(conn, """
+    data = query_to_list(conn, f"""
         SELECT
             DATE_TRUNC('month', event_date)::date as month,
             event_type,
             COUNT(*) as events,
             COALESCE(SUM(fatalities), 0) as fatalities
         FROM conflict_events.acled_events
+        WHERE {ACLED_COUNTRY_FILTER}
         GROUP BY DATE_TRUNC('month', event_date), event_type
         ORDER BY month, event_type
     """)
@@ -472,12 +478,13 @@ def export_datasets_catalog(conn):
         entry = {"dataset": name, "category": cat, "source": src, "table": tbl,
                  "n_rows": None, "date_start": None, "date_end": None}
         try:
+            where_clause = f" WHERE {ACLED_COUNTRY_FILTER}" if tbl == "conflict_events.acled_events" else ""
             if dexpr:
-                r = query_one(conn, f"SELECT COUNT(*) AS n, MIN({dexpr}) AS mn, MAX({dexpr}) AS mx FROM {tbl}")
+                r = query_one(conn, f"SELECT COUNT(*) AS n, MIN({dexpr}) AS mn, MAX({dexpr}) AS mx FROM {tbl}{where_clause}")
                 entry["n_rows"] = int(r["n"]); entry["date_start"] = str(r["mn"]) if r["mn"] else None
                 entry["date_end"] = str(r["mx"]) if r["mx"] else None
             else:
-                r = query_one(conn, f"SELECT COUNT(*) AS n FROM {tbl}")
+                r = query_one(conn, f"SELECT COUNT(*) AS n FROM {tbl}{where_clause}")
                 entry["n_rows"] = int(r["n"])
         except Exception as e:
             conn.rollback(); entry["error"] = str(e).splitlines()[0][:80]

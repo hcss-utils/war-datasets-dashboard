@@ -20,6 +20,9 @@ ACLED_LEGACY_API_URL = "https://api.acleddata.com/acled/read"
 MAX_RESULTS_PER_PAGE = 5000
 MAX_RETRIES = 3
 RETRY_DELAY = 5
+TARGET_COUNTRIES = {"Ukraine", "Russia"}
+TARGET_ISOS = {804, 643}
+TARGET_ISO_PARAM = "|".join(str(iso) for iso in sorted(TARGET_ISOS))
 
 # Module-level OAuth token cache
 _oauth_token = None
@@ -96,6 +99,20 @@ def _parse_acled_date(val):
         return None
 
 
+def _target_country_params():
+    """Server-side ACLED filter for the Ukraine/Russia conflict theater."""
+    return {
+        "iso": TARGET_ISO_PARAM,
+        "iso_where": "IN",
+    }
+
+
+def _is_target_country(ev):
+    iso = _safe_int(ev.get("iso"))
+    country = ev.get("country")
+    return iso in TARGET_ISOS or country in TARGET_COUNTRIES
+
+
 class ACLEDUpdater(BaseUpdater):
     name = "acled"
     tables = ["conflict_events.acled_events"]
@@ -119,7 +136,7 @@ class ACLEDUpdater(BaseUpdater):
                 else:
                     raise
 
-    def _fetch_all(self, start_date, end_date):
+    def _fetch_all(self, start_date, end_date, use_api_country_filter=True):
         """Fetch ACLED events via OAuth API with pagination."""
         email = self.config.get("ACLED_EMAIL", "")
         password = self.config.get("ACLED_PASSWORD", "")
@@ -161,7 +178,11 @@ class ACLEDUpdater(BaseUpdater):
                 "limit": MAX_RESULTS_PER_PAGE,
             }
 
-        self.log(f"Fetching ACLED {start_date} to {end_date} via {'OAuth' if use_oauth else 'Legacy'} API")
+        if use_api_country_filter:
+            params.update(_target_country_params())
+
+        country_scope = "Ukraine/Russia" if use_api_country_filter else "all countries, client-filtered"
+        self.log(f"Fetching ACLED {start_date} to {end_date} ({country_scope}) via {'OAuth' if use_oauth else 'Legacy'} API")
 
         all_events = []
         page = 1
@@ -169,10 +190,13 @@ class ACLEDUpdater(BaseUpdater):
             data = self._fetch_page(api_url, params, headers, page)
 
             if "error" in data:
+                if use_api_country_filter:
+                    self.log(f"  ACLED API rejected country filter: {data.get('error')}. Retrying without server-side country filter...")
+                    return self._fetch_all(start_date, end_date, use_api_country_filter=False)
                 # If legacy fails, retry with OAuth
                 if not use_oauth and password:
                     self.log(f"  Legacy API error: {data.get('error')}. Switching to OAuth...")
-                    return self._fetch_oauth(start_date, end_date, email, password)
+                    return self._fetch_oauth(start_date, end_date, email, password, use_api_country_filter)
                 raise RuntimeError(f"ACLED API error: {data.get('error')}")
 
             events = data.get("data", [])
@@ -191,7 +215,7 @@ class ACLEDUpdater(BaseUpdater):
 
         return all_events
 
-    def _fetch_oauth(self, start_date, end_date, email, password):
+    def _fetch_oauth(self, start_date, end_date, email, password, use_api_country_filter=True):
         """Direct OAuth fetch (fallback)."""
         token = _get_oauth_token(email, password)
         if not token:
@@ -203,10 +227,17 @@ class ACLEDUpdater(BaseUpdater):
             "event_date_where": "BETWEEN",
             "limit": MAX_RESULTS_PER_PAGE,
         }
+        if use_api_country_filter:
+            params.update(_target_country_params())
         all_events = []
         page = 1
         while True:
             data = self._fetch_page(ACLED_API_URL, params, headers, page)
+            if "error" in data:
+                if use_api_country_filter:
+                    self.log(f"  ACLED OAuth rejected country filter: {data.get('error')}. Retrying without server-side country filter...")
+                    return self._fetch_oauth(start_date, end_date, email, password, use_api_country_filter=False)
+                raise RuntimeError(f"ACLED API error: {data.get('error')}")
             events = data.get("data", [])
             if not events:
                 break
@@ -287,7 +318,12 @@ class ACLEDUpdater(BaseUpdater):
             self.log("No new events from API")
             return {"new_events": 0}
 
-        rows = [self._event_to_row(ev) for ev in events]
+        filtered_events = [ev for ev in events if _is_target_country(ev)]
+        dropped = len(events) - len(filtered_events)
+        if dropped:
+            self.log(f"  Dropped {dropped} non-Ukraine/Russia events after fetch")
+
+        rows = [self._event_to_row(ev) for ev in filtered_events]
         self.log(f"Inserting {len(rows)} events (ON CONFLICT DO NOTHING)...")
         self.insert_batch(
             "conflict_events.acled_events",
