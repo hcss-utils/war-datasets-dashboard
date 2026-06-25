@@ -1058,6 +1058,40 @@ html, body, #root {
   margin-top: 4px;
 }
 
+.label-with-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  vertical-align: middle;
+}
+
+.country-flag {
+  display: inline-block;
+  width: 18px;
+  height: 12px;
+  flex: 0 0 18px;
+  border: 1px solid rgba(232, 237, 243, 0.55);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(13, 31, 60, 0.25);
+}
+
+.country-flag-ua {
+  background: linear-gradient(to bottom, #005bbb 0 50%, #ffd500 50% 100%);
+}
+
+.country-flag-ru {
+  background: linear-gradient(to bottom, #ffffff 0 33.333%, #0039a6 33.333% 66.666%, #d52b1e 66.666% 100%);
+}
+
+.section-title-with-flag {
+  color: var(--text-primary);
+}
+
+.section-title-with-flag .label-with-flag {
+  justify-content: flex-start;
+}
+
 .stat-card .stat-date-range {
   display: block;
   font-size: 10px;

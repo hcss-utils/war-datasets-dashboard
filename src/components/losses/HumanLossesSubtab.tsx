@@ -21,6 +21,28 @@ const SourceLink = ({ source }: { source: string }) => {
   );
 };
 
+type CountryCode = 'ua' | 'ru';
+
+const COUNTRY_NAMES: Record<CountryCode, string> = {
+  ua: 'Ukraine',
+  ru: 'Russia',
+};
+
+const FlagBadge = ({ country }: { country: CountryCode }) => (
+  <span
+    className={`country-flag country-flag-${country}`}
+    role="img"
+    aria-label={`${COUNTRY_NAMES[country]} flag`}
+  />
+);
+
+const FlaggedLabel = ({ country, children }: { country: CountryCode; children: React.ReactNode }) => (
+  <span className="label-with-flag">
+    <FlagBadge country={country} />
+    <span>{children}</span>
+  </span>
+);
+
 // Plotly dark theme layout base
 const darkLayout = {
   paper_bgcolor: 'transparent',
@@ -303,15 +325,21 @@ export default function HumanLossesSubtab({ selectedViews }: HumanLossesSubtabPr
           <div className="stat-cards conflict-stats">
             <div className="stat-card highlight-red">
               <span className="stat-value">{fmt(military.ualosses.confirmed_kia_total)}</span>
-              <span className="stat-label">🇺🇦 UA confirmed KIA (UALosses, named)</span>
+              <span className="stat-label">
+                <FlaggedLabel country="ua">UA confirmed KIA (UALosses, named)</FlaggedLabel>
+              </span>
             </div>
             <div className="stat-card">
               <span className="stat-value">&ge;{fmt(military.mediazona.total)}</span>
-              <span className="stat-label">🇷🇺 RU named killed (Mediazona) — a floor, no dates</span>
+              <span className="stat-label">
+                <FlaggedLabel country="ru">RU named killed (Mediazona) — a floor, no dates</FlaggedLabel>
+              </span>
             </div>
             <div className="stat-card">
               <span className="stat-value">~{military.mediazona.probate_estimate ? fmt(military.mediazona.probate_estimate) : 'N/A'}</span>
-              <span className="stat-label">🇷🇺 RU est. toll (Probate Registry)</span>
+              <span className="stat-label">
+                <FlaggedLabel country="ru">RU est. toll (Probate Registry)</FlaggedLabel>
+              </span>
             </div>
           </div>
 
@@ -354,8 +382,8 @@ export default function HumanLossesSubtab({ selectedViews }: HumanLossesSubtabPr
             <div className="chart-container" style={{ marginTop: '1.25rem' }}>
               <Plot
                 data={[
-                  { type: 'scatter', mode: 'lines', name: '🇷🇺 RU forces', x: military.ucdp.monthly.map((m) => m.month), y: military.ucdp.monthly.map((m) => m.ru_deaths), line: { color: '#ef4444', width: 2 } } as any,
-                  { type: 'scatter', mode: 'lines', name: '🇺🇦 UA forces', x: military.ucdp.monthly.map((m) => m.month), y: military.ucdp.monthly.map((m) => m.ua_deaths), line: { color: '#4da3ff', width: 2 } } as any,
+                  { type: 'scatter', mode: 'lines', name: 'RU forces', x: military.ucdp.monthly.map((m) => m.month), y: military.ucdp.monthly.map((m) => m.ru_deaths), line: { color: '#ef4444', width: 2 } } as any,
+                  { type: 'scatter', mode: 'lines', name: 'UA forces', x: military.ucdp.monthly.map((m) => m.month), y: military.ucdp.monthly.map((m) => m.ua_deaths), line: { color: '#4da3ff', width: 2 } } as any,
                   { type: 'scatter', mode: 'lines', name: 'Civilians', x: military.ucdp.monthly.map((m) => m.month), y: military.ucdp.monthly.map((m) => m.civilian_deaths), line: { color: '#eab308', width: 1.5, dash: 'dot' } } as any,
                 ]}
                 layout={{ ...darkLayout, title: 'Dated fatalities by month, both sides (UCDP GED — event-verified)', height: 360, margin: { t: 50, r: 20, b: 50, l: 60 }, yaxis: { ...darkLayout.yaxis, title: 'Deaths / month' } } as any}
@@ -375,7 +403,9 @@ export default function HumanLossesSubtab({ selectedViews }: HumanLossesSubtabPr
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginTop: '1rem' }}>
             <div style={{ flex: '1 1 280px' }}>
-              <h4 style={{ marginBottom: '0.4rem' }}>🇺🇦 UA records by status</h4>
+              <h4 className="section-title-with-flag" style={{ marginBottom: '0.4rem' }}>
+                <FlaggedLabel country="ua">UA records by status</FlaggedLabel>
+              </h4>
               <ul className="region-list">
                 {Object.entries(military.ualosses.by_status).map(([s, n]) => (
                   <li key={s}><span>{s}</span><strong>{fmt(n)}</strong></li>
@@ -383,7 +413,9 @@ export default function HumanLossesSubtab({ selectedViews }: HumanLossesSubtabPr
               </ul>
             </div>
             <div style={{ flex: '1 1 280px' }}>
-              <h4 style={{ marginBottom: '0.4rem' }}>🇷🇺 RU top home regions (origin)</h4>
+              <h4 className="section-title-with-flag" style={{ marginBottom: '0.4rem' }}>
+                <FlaggedLabel country="ru">RU top home regions (origin)</FlaggedLabel>
+              </h4>
               <ul className="region-list">
                 {military.mediazona.top_regions.slice(0, 8).map((r) => (
                   <li key={r.region}><span>{r.region}</span><strong>{fmt(r.n)}</strong></li>
