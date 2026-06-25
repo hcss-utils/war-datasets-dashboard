@@ -20,6 +20,7 @@ import {
 import { loadDailyAerialThreats, loadWeaponTypes } from '../data/newLoader';
 import type { DailyAerialThreat, WeaponTypeSummary } from '../types';
 import { CorrelationInfo, DualPaneInfo } from './InfoModal';
+import { useDashboard } from '../context/DashboardContext';
 
 // Format number with thousands separators
 const fmt = (n: number) => n.toLocaleString();
@@ -30,7 +31,7 @@ const SOURCE_ID_MAP: Record<string, string> = {
   'ACLED/UCDP': 'acled',
   'VIINA': 'viina',
   'Bellingcat': 'bellingcat',
-  'MDAA Tracker': 'mdaa',
+  'MDAA Tracker and Missile Attacks': 'missile',
   'Ukraine MOD': 'equipment',
   'DeepState': 'deepstate',
   'OHCHR': 'ohchr',
@@ -40,17 +41,15 @@ const SOURCE_ID_MAP: Record<string, string> = {
 
 const SourceLink = ({ source }: { source: string }) => {
   const sourceId = SOURCE_ID_MAP[source] || source.toLowerCase();
+  const { dispatch } = useDashboard();
   return (
     <a
       href={`#source-${sourceId}`}
       className="source-link-inline"
       onClick={(e) => {
         e.preventDefault();
-        window.location.hash = 'sources';
-        setTimeout(() => {
-          const el = document.getElementById(`source-${sourceId}`);
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 100);
+        dispatch({ type: 'SET_TAB', payload: 'sources' as any });
+        window.location.hash = `sources-${sourceId}`;
       }}
     >
       ({source})
@@ -209,7 +208,7 @@ export default function AerialAssaultsTab() {
       </div>
 
       <div className="chart-card">
-        <h3>Daily Aerial Threats (7-day Rolling Average) <SourceLink source="MDAA Tracker" /> <DualPaneInfo /></h3>
+        <h3>Daily Aerial Threats (7-day Rolling Average) <SourceLink source="MDAA Tracker and Missile Attacks" /> <DualPaneInfo /></h3>
         <p className="chart-note">Top: Daily counts | Bottom: 7-day rate of change (%)</p>
         <div className="correlation-stats">
           <div className="corr-stat">
@@ -279,7 +278,7 @@ export default function AerialAssaultsTab() {
 
       <div className="chart-grid-2">
         <div className="chart-card">
-          <h3>Drones vs Missiles (Daily) <SourceLink source="MDAA Tracker" /></h3>
+          <h3>Drones vs Missiles (Daily) <SourceLink source="MDAA Tracker and Missile Attacks" /></h3>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={dailyThreats.slice(-180)}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -334,7 +333,7 @@ export default function AerialAssaultsTab() {
         </div>
 
         <div className="chart-card">
-          <h3>Intercept Rate Over Time <SourceLink source="MDAA Tracker" /></h3>
+          <h3>Intercept Rate Over Time <SourceLink source="MDAA Tracker and Missile Attacks" /></h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={rollingData.slice(-180)}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -372,7 +371,7 @@ export default function AerialAssaultsTab() {
       </div>
 
       <div className="chart-card">
-        <h3>Weapon Types by Launch Count <SourceLink source="MDAA Tracker" /></h3>
+        <h3>Weapon Types by Launch Count <SourceLink source="MDAA Tracker and Missile Attacks" /></h3>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={topWeapons} layout="vertical" margin={{ right: 80 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -402,7 +401,7 @@ export default function AerialAssaultsTab() {
       </div>
 
       <div className="chart-card">
-        <h3>Intercept Rate by Weapon Type <SourceLink source="MDAA Tracker" /></h3>
+        <h3>Intercept Rate by Weapon Type <SourceLink source="MDAA Tracker and Missile Attacks" /></h3>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={weaponsSortedAlpha} layout="vertical" margin={{ right: 50 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />

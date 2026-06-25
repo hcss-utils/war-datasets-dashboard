@@ -5,17 +5,27 @@ import type { DailyAerialThreat, WeaponTypeSummary, AerialAttackType } from '../
 import { CorrelationInfo, DualPaneInfo } from './InfoModal';
 import { usePlotlyZoom } from '../utils/usePlotlyZoom';
 import { filterByDateRange } from '../utils/dateFilter';
+import { useDashboard } from '../context/DashboardContext';
 
 const fmt = (n: number) => n.toLocaleString();
 
 const SOURCE_ID_MAP: Record<string, string> = {
-  'MDAA Tracker': 'mdaa',
+  'MDAA Tracker and Missile Attacks': 'missile',
 };
 
 const SourceLink = ({ source }: { source: string }) => {
   const sourceId = SOURCE_ID_MAP[source] || source.toLowerCase();
+  const { dispatch } = useDashboard();
   return (
-    <a href={`#sources-${sourceId}`} className="source-link-inline">
+    <a
+      href={`#sources-${sourceId}`}
+      className="source-link-inline"
+      onClick={(e) => {
+        e.preventDefault();
+        dispatch({ type: 'SET_TAB', payload: 'sources' as any });
+        window.location.hash = `sources-${sourceId}`;
+      }}
+    >
       ({source})
     </a>
   );
@@ -308,7 +318,7 @@ export default function UnifiedAerialTab() {
 
             {/* Daily Aerial Threats - Dual Pane */}
             <div className="chart-card">
-              <h3>Daily Aerial Threats (7-day Rolling Average) <SourceLink source="MDAA Tracker" /> <DualPaneInfo /></h3>
+              <h3>Daily Aerial Threats (7-day Rolling Average) <SourceLink source="MDAA Tracker and Missile Attacks" /> <DualPaneInfo /></h3>
               <p className="chart-note">Top: Daily counts | Bottom: 7-day rate of change (%). Drag to zoom.</p>
               <div className="correlation-stats">
                 <div className="corr-stat">
@@ -391,7 +401,7 @@ export default function UnifiedAerialTab() {
             <div className="chart-grid-2">
               {/* Drones vs Missiles */}
               <div className="chart-card">
-                <h3>Drones vs Missiles (Daily) <SourceLink source="MDAA Tracker" /></h3>
+                <h3>Drones vs Missiles (Daily) <SourceLink source="MDAA Tracker and Missile Attacks" /></h3>
                 <Plot
                   data={[
                     ...(showDrones ? [{
@@ -432,7 +442,7 @@ export default function UnifiedAerialTab() {
 
               {/* Intercept Rate Over Time */}
               <div className="chart-card">
-                <h3>Intercept Rate Over Time <SourceLink source="MDAA Tracker" /></h3>
+                <h3>Intercept Rate Over Time <SourceLink source="MDAA Tracker and Missile Attacks" /></h3>
                 <Plot
                   data={[
                     {
@@ -459,7 +469,7 @@ export default function UnifiedAerialTab() {
 
             {/* Weapon Types by Launch Count */}
             <div className="chart-card">
-              <h3>Weapon Types by Launch Count <SourceLink source="MDAA Tracker" /></h3>
+              <h3>Weapon Types by Launch Count <SourceLink source="MDAA Tracker and Missile Attacks" /></h3>
               <Plot
                 data={[
                   {
@@ -500,7 +510,7 @@ export default function UnifiedAerialTab() {
 
             {/* Intercept Rate by Weapon Type */}
             <div className="chart-card">
-              <h3>Intercept Rate by Weapon Type <SourceLink source="MDAA Tracker" /></h3>
+              <h3>Intercept Rate by Weapon Type <SourceLink source="MDAA Tracker and Missile Attacks" /></h3>
               <Plot
                 data={[
                   {
