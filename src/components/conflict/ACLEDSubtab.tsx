@@ -130,7 +130,11 @@ export default function ACLEDSubtab({ selectedTypes }: ACLEDSubtabProps) {
   const totalFatalities = filteredEventsByType.reduce((s, e) => s + e.fatalities, 0);
 
   // Top 10 regions
-  const topRegions = eventsByRegion.slice(0, 10).sort((a, b) => a.region.localeCompare(b.region));
+  const topRegions = [...eventsByRegion]
+    .filter(d => d.region && Number.isFinite(d.events) && d.events > 0)
+    .sort((a, b) => b.events - a.events)
+    .slice(0, 10);
+  const maxRegionEvents = Math.max(...topRegions.map(d => d.events), 0);
 
   // Monthly data for stacked bar chart
   const monthlyAggregated = filteredMonthlyEvents.reduce((acc, m) => {
@@ -246,31 +250,48 @@ export default function ACLEDSubtab({ selectedTypes }: ACLEDSubtabProps) {
             {/* Horizontal bar chart for regions */}
             <div className="chart-card">
               <h3>Top 10 Regions <SourceLink source="ACLED" /></h3>
-              <Plot
-                data={[
-                  {
-                    x: topRegions.map(d => d.events),
-                    y: topRegions.map(d => d.region),
-                    type: 'bar' as const,
-                    orientation: 'h' as const,
-                    marker: { color: topRegions.map((_, i) => PLOTLY_COLORS[i % PLOTLY_COLORS.length]) },
-                    text: topRegions.map(d => fmt(d.events)),
-                    textposition: 'outside' as const,
-                    textfont: { color: '#888', size: 10 },
-                    hovertemplate: '%{y}<br>%{x:,} events<extra></extra>',
-                    hoverlabel: { font: { color: '#fff' } },
-                  },
-                ]}
-                layout={{
-                  ...darkLayout,
-                  height: 300,
-                  margin: { l: 120, r: 60, t: 20, b: 40 },
-                  xaxis: { ...darkLayout.xaxis, tickformat: ',' },
-                  yaxis: { ...darkLayout.yaxis, autorange: 'reversed' as const },
-                }}
-                config={{ displayModeBar: false, responsive: true }}
-                style={{ width: '100%' }}
-              />
+              {topRegions.length === 0 ? (
+                <p className="no-data-msg">No ACLED region data available.</p>
+              ) : (
+                <Plot
+                  data={[
+                    {
+                      x: topRegions.map(d => d.events),
+                      y: topRegions.map(d => d.region),
+                      type: 'bar' as const,
+                      orientation: 'h' as const,
+                      marker: { color: topRegions.map((_, i) => PLOTLY_COLORS[i % PLOTLY_COLORS.length]) },
+                      text: topRegions.map(d => fmt(d.events)),
+                      textposition: 'outside' as const,
+                      textfont: { color: '#cbd5e1', size: 10 },
+                      cliponaxis: false,
+                      hovertemplate: '%{y}<br>%{x:,} events<extra></extra>',
+                      hoverlabel: { font: { color: '#fff' } },
+                    },
+                  ]}
+                  layout={{
+                    ...darkLayout,
+                    height: 320,
+                    margin: { l: 135, r: 80, t: 20, b: 45 },
+                    xaxis: {
+                      ...darkLayout.xaxis,
+                      tickformat: ',',
+                      range: [0, maxRegionEvents * 1.18],
+                      automargin: true,
+                      fixedrange: false,
+                    },
+                    yaxis: {
+                      ...darkLayout.yaxis,
+                      type: 'category' as const,
+                      autorange: 'reversed' as const,
+                      automargin: true,
+                    },
+                  }}
+                  config={{ displayModeBar: false, responsive: true }}
+                  useResizeHandler
+                  style={{ width: '100%', height: '320px', minHeight: '320px' }}
+                />
+              )}
             </div>
           </div>
         </>
