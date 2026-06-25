@@ -416,7 +416,7 @@ export default function HumanLossesSubtab({ selectedViews }: HumanLossesSubtabPr
               </h4>
               <ul className="region-list">
                 {Object.entries(military.ualosses.by_status).map(([s, n]) => (
-                  <li key={s}><span>{s}</span><strong>{fmt(n)}</strong></li>
+                  <li key={s} style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}><span>{s}</span><strong>{fmt(n)}</strong></li>
                 ))}
               </ul>
             </div>
@@ -426,7 +426,7 @@ export default function HumanLossesSubtab({ selectedViews }: HumanLossesSubtabPr
               </h4>
               <ul className="region-list">
                 {military.mediazona.top_regions.slice(0, 8).map((r) => (
-                  <li key={r.region}><span>{r.region}</span><strong>{fmt(r.n)}</strong></li>
+                  <li key={r.region} style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}><span>{r.region}</span><strong>{fmt(r.n)}</strong></li>
                 ))}
               </ul>
             </div>
