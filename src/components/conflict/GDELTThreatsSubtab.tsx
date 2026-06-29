@@ -19,6 +19,15 @@ import { GDELT_DIRECTION_LABELS } from '../../types';
 
 const fmt = (n: number) => n.toLocaleString();
 
+const SourceLink = ({ source, sourceId }: { source: string; sourceId?: string }) => {
+  const id = sourceId || source.toLowerCase();
+  return (
+    <a href={`#sources-${id}`} className="source-link-inline">
+      ({source})
+    </a>
+  );
+};
+
 const DIRECTION_COLORS: Record<string, string> = {
   rus_outbound: '#ef4444',
   inbound_to_rus: '#3b82f6',
@@ -314,7 +323,7 @@ export default function GDELTThreatsSubtab({ selectedDirections }: GDELTThreatsS
 
       {/* Chart 1: Coercive Rhetoric Index */}
       <div className="chart-section">
-        <h3>Coercive Rhetoric Index (Weekly Quotation Counts)</h3>
+        <h3>Coercive Rhetoric Index (Weekly Quotation Counts) <SourceLink source="GDELT" /></h3>
         <p className="chart-description">
           Stacked weekly counts of nuclear, red line, threat, ultimatum, escalation, and deterrence
           quotations from GDELT Global Knowledge Graph.
@@ -335,7 +344,7 @@ export default function GDELTThreatsSubtab({ selectedDirections }: GDELTThreatsS
 
       {/* Chart 2: Threat Direction Timeline */}
       <div className="chart-section">
-        <h3>Threat Event Volume by Direction (Weekly)</h3>
+        <h3>Threat Event Volume by Direction (Weekly) <SourceLink source="GDELT" /></h3>
         <p className="chart-description">
           Weekly GDELT CAMEO code 13 (Threaten) events, split by direction:
           Russia threatening others vs. others threatening Russia.
@@ -356,7 +365,7 @@ export default function GDELTThreatsSubtab({ selectedDirections }: GDELTThreatsS
 
       {/* Chart 3: Top Threat Targets */}
       <div className="chart-section">
-        <h3>Top Threat Targets (Country Pairs with Russia)</h3>
+        <h3>Top Threat Targets (Country Pairs with Russia) <SourceLink source="GDELT" /></h3>
         <p className="chart-description">
           Total threat events by country pair. Red bars show Russia threatening that country;
           blue bars show that country threatening Russia.
@@ -379,7 +388,7 @@ export default function GDELTThreatsSubtab({ selectedDirections }: GDELTThreatsS
 
       {/* Chart 4: CAMEO Threat Type Breakdown */}
       <div className="chart-section">
-        <h3>Threat Type Breakdown (CAMEO Subcodes)</h3>
+        <h3>Threat Type Breakdown (CAMEO Subcodes) <SourceLink source="GDELT" /></h3>
         <p className="chart-description">
           Distribution of threat types. Color intensity reflects average Goldstein scale severity
           (red = more hostile). Numbers show event count and average Goldstein score.
@@ -402,7 +411,7 @@ export default function GDELTThreatsSubtab({ selectedDirections }: GDELTThreatsS
 
       {/* Chart 5: Media Tone & Volume */}
       <div className="chart-section">
-        <h3>Russia-Related Media Volume & Tone</h3>
+        <h3>Russia-Related Media Volume & Tone <SourceLink source="GDELT" /></h3>
         <p className="chart-description">
           Weekly Russia-related media volume (blue area, left axis) and average media tone
           (red line, right axis). More negative tone indicates more hostile coverage.
@@ -431,7 +440,7 @@ export default function GDELTThreatsSubtab({ selectedDirections }: GDELTThreatsS
 
       {/* Chart 6: Dyadic Asymmetries */}
       <div className="chart-section">
-        <h3>Dyadic Threat Asymmetries (Goldstein Score)</h3>
+        <h3>Dyadic Threat Asymmetries (Goldstein Score) <SourceLink source="GDELT" /></h3>
         <p className="chart-description">
           Pairs of countries with bidirectional threat flows. Bars show average Goldstein scale
           for each direction. Larger gaps indicate more asymmetric threat relationships.
