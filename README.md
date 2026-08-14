@@ -176,6 +176,20 @@ For ad-hoc deployment alternatives (Cloudflare tunnel, Netlify, Vercel), see the
 
 ## Dashboard Features
 
+### Territorial data-integrity gate
+
+The Territory and Net Changes subtabs load `public/data/territory_methodology.json`, generated directly from PostGIS by `pipeline/scripts/gen_territory_methodology.py`. The panel separates calendar-date coverage from usable geometry coverage and blocks trend interpretation for the verified DeepState active-occupied geometry blackout from 2022-04-24 through 2022-09-24. The active-wartime DeepState chart renders that interval as a visible break rather than connecting an invented trend through it.
+
+The same live artifact compares `deepstate_v2` with the legacy `territorial_control` derivatives and reports the current ISW import high-water mark. The daily VPS materializer refreshes the methodology artifact alongside the territorial datasets, so displayed counts and dates come from the database rather than hardcoded UI text.
+
+### ISW Gmail-to-PostGIS refresh
+
+The canonical refresh implementation lives in `pipeline/scripts/isw_refresh_orchestrator.py`, with `import_isw_shapefiles.py` as its PostGIS importer and `run_isw_refresh.sh` as the scheduled entry point. Windows Task Scheduler runs `RuBase-ISW-Shapefiles`; the task invokes WSL but keeps its mutable runtime state under `C:\Apps\rubase-scheduler\isw-shapefiles`, so it does not depend on a healthy Google Drive mount.
+
+The orchestrator is resume-capable and fail-closed. It enumerates the authorized Gmail corpus, validates ZIP integrity, recursively expands ZIP bundles until terminal shapefile archives are reached, skips already-published archives, maintains an append-only download ledger plus heartbeat/state files, and refuses to import if any attachment remains unresolved. The importer uses `--skip-existing`, clears its extraction workspace between archives, searches recursively for the single terminal `.shp`, and preserves provider-native categorical confidence in `isw.events.confidence_raw` while retaining integral scores in the legacy `confidence` column. Acceptance requires both a successful importer exit and a monotonic advance of `isw.shapefile_metadata` in the live VPS `war_datasets` PostGIS database.
+
+The source-comparison product is documented in [Territorial source harmonisation](docs/TERRITORY_HARMONISATION.md). It adds PostGIS-backed daily availability, same-date ISW/DeepState geometry overlap and disagreement, a Ukraine/Kursk border split, and observation-level confidence/provenance while retaining the existing periodization as the narrative spine.
+
 ### Territory Tab (4 charts)
 - **Russian-Controlled Territory** — Area chart with interpolated data, linear trend line, event overlay markers
 - **Monthly Territorial Changes** — Bar chart with red (Russian gains) / blue (Ukrainian gains), average line, stats overlay

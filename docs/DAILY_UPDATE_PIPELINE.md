@@ -2,6 +2,28 @@
 
 Automated daily pipeline that detects new data in the PostgreSQL database, selectively re-exports only changed datasets, rebuilds the dashboard, and deploys to GitHub Pages — all via GitHub Actions.
 
+## Territorial methodology artifact
+
+`pipeline/scripts/gen_territory_methodology.py` is part of the VPS materialization run. It atomically publishes `territory_methodology.json` and regenerates `deepstate_daily_areas.json` from `deepstate_v2.features` with `control_status='occupied'`. The methodology output measures snapshot-date coverage, the verified spring/summer 2022 geometry blackout, legacy-schema coverage, and the ISW import high-water mark. Dashboard code consumes these values; it must not duplicate them as static metrics.
+
+The analytical exclusion is deliberate: DeepState snapshots are near-daily, but active occupied geometry is unusable as a territorial trend between 2022-04-24 and 2022-09-24. The endpoints remain point-in-time observations. The pipeline preserves the raw values while the UI breaks and shades the series across the excluded interval.
+
+## ISW shapefile acquisition
+
+ISW shapefiles use a separate source-acquisition lane because the authorized source is Gmail rather than a public endpoint. `pipeline/scripts/isw_refresh_orchestrator.py` is the owner of download state, validation, retries, heartbeats, and the import hand-off; `pipeline/scripts/import_isw_shapefiles.py` performs the idempotent PostGIS load. The installed Windows task is `RuBase-ISW-Shapefiles` and calls `pipeline/scripts/run_isw_refresh.sh` through WSL.
+
+The source has used three packaging shapes: direct shapefile ZIPs, ZIPs containing terminal shapefile ZIPs, and ZIPs containing additional bundle ZIPs. The validator and publisher therefore recurse through ZIP members with a bounded maximum depth, but publish only terminal archives containing `.shp` members. Terminal ZIPs may also place their shapefile below nested directories, so the importer searches recursively after extracting each archive into a clean workspace. Reusing one extraction directory without clearing it is prohibited: it can silently bind later metadata to an earlier archive's geometry. Any invalid terminal, ambiguous multiple-shapefile archive, CRC error, size mismatch, or filename collision blocks the import. Existing validated archives and existing database records are skipped, making an interrupted run safe to resume.
+
+`isw.events.confidence` is an integer compatibility field, but some ISW/CTP products use categorical source values such as `low` and `nominal`. The importer stores the provider value losslessly in `confidence_raw`; only integral numeric values are also written to `confidence`. The schema migration is `pipeline/sql/isw_confidence_raw.sql`.
+
+Operational evidence is stored outside the Drive mount under `C:\Apps\rubase-scheduler\isw-shapefiles`: `state.json`, `heartbeat.json`, `download_ledger.jsonl`, and `isw_refresh.log`. A green scheduled-task result alone is not acceptance; check the state document and independently query `COUNT(*)`, `MAX(layer_date)`, and `MAX(imported_at)` from `isw.shapefile_metadata`.
+
+## Territorial harmonisation refresh
+
+`pipeline/scripts/refresh_territory_harmonisation.py` supervises the PostGIS comparison layer before `gen_territory_harmonisation.py` publishes the dashboard feed. It owns an exclusive lock, atomic heartbeat/state, source high-water measurement, separately committed stages, missing-date resume logic, already-current-stage inference after state loss, and final row/date validation. Runtime state lives at `/var/lib/war-datasets-dashboard/territory-harmonisation` on the VPS. The accepted 2026-08-14 state is `healthy` at DeepState and ISW high-water 2026-08-13.
+
+The product retains missing-source dates explicitly, compares only same-date cumulative-control geometries, and separates DeepState `liberated` geometry by the Ukraine international boundary and Kursk Oblast boundary. It complements the narrative periodization rather than replacing it. Full schema, interpretation, and measured acceptance evidence are in [Territorial source harmonisation](TERRITORY_HARMONISATION.md).
+
 ---
 
 ## Table of Contents

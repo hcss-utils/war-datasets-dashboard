@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import { usePlotlyZoom } from '../../utils/usePlotlyZoom';
-import { loadDailyAreas, loadDeepStateAreas, type DeepStateArea } from '../../data/newLoader';
+import { loadDailyAreas, loadDeepStateAreas, loadTerritoryMethodology, type DeepStateArea, type TerritoryMethodology } from '../../data/newLoader';
+import TerritoryMethodologyAlert from './TerritoryMethodologyAlert';
+import TerritoryHarmonisationPanel from './TerritoryHarmonisationPanel';
 import type { DailyArea, TerritoryLayerType } from '../../types';
 
 const fmt = (n: number) => n.toLocaleString();
@@ -76,6 +78,7 @@ export default function TerritoryLossesSubtab({ selectedLayers }: TerritoryLosse
   const { xaxisRange, onRelayout } = usePlotlyZoom();
   const [dailyAreas, setDailyAreas] = useState<DailyArea[]>([]);
   const [deepState, setDeepState] = useState<DeepStateArea[]>([]);
+  const [methodology, setMethodology] = useState<TerritoryMethodology | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,6 +93,7 @@ export default function TerritoryLossesSubtab({ selectedLayers }: TerritoryLosse
         setLoading(false);
       });
     loadDeepStateAreas().then(setDeepState).catch(() => {});
+    loadTerritoryMethodology().then(setMethodology).catch(() => {});
   }, []);
 
   // Process data by layer type
@@ -178,7 +182,10 @@ export default function TerritoryLossesSubtab({ selectedLayers }: TerritoryLosse
   return (
     <div className="conflict-subtab">
       <h2>Territory Control</h2>
-      <p className="tab-subtitle">Territorial control — the DeepState genuinely-daily occupied series (full war) plus the ISW layer-type series (editorial redraw)</p>
+      <p className="tab-subtitle">Territorial control – near-daily DeepState snapshots with an explicit geometry-quality exclusion, plus ISW editorial redraws</p>
+
+      <TerritoryMethodologyAlert />
+      <TerritoryHarmonisationPanel />
 
       <div className="stat-cards conflict-stats">
         {selectedLayersList.map(layer => (
@@ -191,11 +198,11 @@ export default function TerritoryLossesSubtab({ selectedLayers }: TerritoryLosse
 
       {/* DeepState full-war occupied series (genuinely daily) */}
       <div className="chart-card">
-        <h3>Russian-Occupied Territory — full war <SourceLink source="DeepState" /></h3>
+        <h3>Active Wartime Russian-Occupied Territory <SourceLink source="DeepState" /></h3>
         <Plot
           data={[{
             x: deepState.map((d) => d.date),
-            y: deepState.map((d) => d.occupiedKm2),
+            y: deepState.map((d) => methodology && d.date >= methodology.blackout.start && d.date <= methodology.blackout.end ? null : d.occupiedKm2),
             type: 'scatter' as const,
             mode: 'lines' as const,
             name: 'DeepState occupied',
@@ -209,12 +216,14 @@ export default function TerritoryLossesSubtab({ selectedLayers }: TerritoryLosse
             height: 340,
             xaxis: { ...darkLayout.xaxis, rangeslider: { visible: true, thickness: 0.08, bgcolor: '#1a1a2e', bordercolor: '#333' } },
             yaxis: { ...darkLayout.yaxis, tickformat: ',', title: { text: 'Occupied area (km²)', font: { size: 11, color: '#888' } } },
+            shapes: methodology ? [{ type: 'rect', xref: 'x', yref: 'paper', x0: methodology.blackout.start, x1: methodology.blackout.end, y0: 0, y1: 1, fillcolor: 'rgba(245,158,11,0.14)', line: { width: 0 } }] : [],
+            annotations: methodology ? [{ x: new Date((new Date(methodology.blackout.start).getTime() + new Date(methodology.blackout.end).getTime()) / 2).toISOString().slice(0, 10), y: 0.93, xref: 'x', yref: 'paper', text: 'GEOMETRY BLACKOUT', showarrow: false, font: { color: '#fbbf24', size: 10 } }] : [],
           }}
           config={plotConfig}
           style={{ width: '100%' }}
         />
         <p style={{ color: '#888', fontSize: '0.8rem', marginTop: '0.25rem' }}>
-          DeepState is genuinely daily and covers the full war from 2022-04-21 (incl. the 2022 maneuver phases). The ISW layer-type charts below start 2023-11-23 and step between editorial redraws.
+          DeepState is near-daily from 2022-04-03, but its occupied geometry is not a valid trend signal during the highlighted 2022 blackout. The ISW layer-type charts below are separate editorial redraws and must not be spliced into DeepState rates without validation.
         </p>
       </div>
 

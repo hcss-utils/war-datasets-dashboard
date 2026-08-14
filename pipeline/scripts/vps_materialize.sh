@@ -30,6 +30,9 @@ git fetch origin main --quiet && git reset --hard origin/main --quiet
 #    geojson + correspondence + metadata date-range). The full export_all_dashboard_data.py
 #    (other datasets, in schemas this DB may not match) stays the GitHub Action's job.
 "$PYBIN" pipeline/scripts/gen_territory_extras.py || echo "WARN: gen_territory_extras failed"
+"$PYBIN" pipeline/scripts/gen_territory_methodology.py || echo "WARN: gen_territory_methodology failed"
+"$PYBIN" pipeline/scripts/refresh_territory_harmonisation.py || echo "WARN: refresh_territory_harmonisation failed"
+"$PYBIN" pipeline/scripts/gen_territory_harmonisation.py || echo "WARN: gen_territory_harmonisation failed"
 
 # 2b) refresh aerial data from Kaggle + re-export the 2 aerial datasets, so the Aerial Assaults
 #     tab + weapons chart stay fresh (they went empty when the kaggle CLI was missing here, 2026-06-19).

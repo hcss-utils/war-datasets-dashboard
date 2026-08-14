@@ -4,6 +4,7 @@ import { usePlotlyZoom } from '../../utils/usePlotlyZoom';
 import { loadDailyAreas } from '../../data/newLoader';
 import type { DailyArea } from '../../types';
 import InfoModal from '../InfoModal';
+import TerritoryMethodologyAlert from './TerritoryMethodologyAlert';
 
 const fmt = (n: number) => n.toLocaleString();
 
@@ -231,6 +232,8 @@ export default function TerritoryChangesSubtab({ selectedTimeUnit }: TerritoryCh
       <p className="tab-subtitle">
         {unitLabel}ly net change in Ukrainian-controlled territory (km²)
       </p>
+
+      <TerritoryMethodologyAlert />
 
       <div className="stat-cards conflict-stats">
         <div className="stat-card" style={{ borderLeft: `3px solid ${totalChange >= 0 ? '#22c55e' : '#ef4444'}` }}>
