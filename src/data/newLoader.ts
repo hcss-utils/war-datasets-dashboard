@@ -113,6 +113,89 @@ export const loadDailyAreas = () => fetchJson<DailyArea[]>('daily_areas.json');
 export interface DeepStateArea { date: string; occupiedKm2: number; }
 export const loadDeepStateAreas = () => fetchJson<DeepStateArea[]>('deepstate_daily_areas.json');
 
+export interface TerritoryMethodology {
+  generatedAt: string;
+  deepStateV2: {
+    firstDate: string; latestDate: string; distinctDates: number; spanDays: number;
+    coveragePct: number; missingDates: number; largestDateGapDays: number;
+    featureRows: number; territoryDates: number;
+  };
+  blackout: {
+    start: string; end: string; durationDays: number;
+    beforeKm2: number; afterDropKm2: number; apparentLossKm2: number;
+    beforeRestoreKm2: number; restoredKm2: number; apparentGainKm2: number;
+    nextDayGainKm2: number;
+    summerCheckpoints: Array<{ date: string; occupiedKm2: number }>;
+  };
+  legacy: {
+    snapshotDates: number; snapshotFirstDate: string; snapshotLatestDate: string;
+    polygonRows: number; polygonDates: number; polygonFirstDate: string; polygonLatestDate: string;
+    territoryRows: number; territoryDates: number; territoryFirstDate: string; territoryLatestDate: string;
+  };
+  isw: { metadataRows: number; latestLayerDate: string; };
+  rule: string;
+}
+export const loadTerritoryMethodology = () => fetchJson<TerritoryMethodology>('territory_methodology.json');
+
+export interface TerritoryComparisonDay {
+  date: string;
+  deepstate_km2: number;
+  isw_km2: number;
+  overlap_km2: number;
+  deepstate_only_km2: number;
+  isw_only_km2: number;
+  intersection_over_union: number;
+  disagreement_share: number;
+  agreement_class: string;
+  comparison_confidence: string;
+}
+export interface TerritoryTheatreDay {
+  date: string;
+  liberated_inside_ukraine_km2: number;
+  ukrainian_held_inside_kursk_km2: number;
+  outside_partition_km2: number;
+  separation_method: string;
+  boundary_confidence: string;
+}
+export interface TerritoryHarmonisation {
+  generatedAt: string;
+  contract: {
+    periodizationRelationship: string;
+    likeForLikeComparison: string;
+    theatreSeparation: string;
+    confidenceMeaning: string;
+  };
+  headline: {
+    latestComparison: TerritoryComparisonDay | null;
+    comparisonDates: number;
+    availability: {
+      calendarDays: number;
+      deepstate: TerritoryAvailabilitySummary;
+      iswUkraineControl: TerritoryAvailabilitySummary;
+      iswUkraineChange: TerritoryAvailabilitySummary;
+      iswKursk: TerritoryAvailabilitySummary;
+      likeForLikeComparison: TerritoryAvailabilitySummary;
+    };
+    peakKursk: TerritoryTheatreDay | null;
+    latestTheatreSplit: TerritoryTheatreDay | null;
+  };
+  quality: {
+    metadata_rows: number;
+    explicit_date_rows: number;
+    message_date_rows: number;
+    unverified_date_rows: number;
+    audited_corrections: number;
+  };
+  dailyComparison: TerritoryComparisonDay[];
+  dailyTheatreSplit: TerritoryTheatreDay[];
+}
+export interface TerritoryAvailabilitySummary {
+  days: number;
+  firstDate: string | null;
+  latestDate: string | null;
+}
+export const loadTerritoryHarmonisation = () => fetchJson<TerritoryHarmonisation>('territory_harmonisation.json');
+
 // Kaggle missile data loaders
 export interface KaggleMissileDaily {
   date: string;
