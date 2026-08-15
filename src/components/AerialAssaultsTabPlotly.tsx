@@ -144,7 +144,15 @@ export default function AerialAssaultsTabPlotly() {
   });
 
   // Top weapons by launch count
-  const topWeapons = weaponTypes.filter((w) => w.total_launched > 50).slice(0, 15);
+  const topWeaponsBase = weaponTypes.filter((w) => w.total_launched > 50).slice(0, 15);
+  // Always surface Russia's heaviest ballistic threat (the Air Force logs it as "Intercontinental
+  // Ballistic Missile"; it includes the Oreshnik IRBM, first used on Dnipro 21 Nov 2024) even though
+  // its n is tiny — it's a notable 0%-interception category the >50 filter would otherwise hide.
+  const icbmRow = weaponTypes.find((w) => w.model === 'Intercontinental Ballistic Missile');
+  const topWeapons =
+    icbmRow && !topWeaponsBase.some((w) => w.model === icbmRow.model)
+      ? [...topWeaponsBase, { ...icbmRow, model: 'ICBM / Oreshnik (incl. Nov-2024)' }]
+      : topWeaponsBase;
   const weaponsSortedAlpha = [...topWeapons].sort((a, b) => a.model.localeCompare(b.model));
 
   // Calculate totals
@@ -411,6 +419,11 @@ export default function AerialAssaultsTabPlotly() {
           config={{ displayModeBar: false, responsive: true }}
           style={{ width: '100%' }}
         />
+        <p className="chart-note" style={{ fontSize: 12, color: '#9aa', marginTop: 6 }}>
+          The <strong>ICBM / Oreshnik</strong> bar (3 launches, <strong>0 intercepted</strong>) is Russia's heaviest ballistic
+          threat — the Air Force logs it as “Intercontinental Ballistic Missile” and it includes the <strong>Oreshnik</strong> IRBM,
+          first used on Dnipro on 21 Nov 2024. Shown despite its small n because none have been intercepted; treat the 0% as n = 3, not a stable rate.
+        </p>
       </div>
     </div>
   );

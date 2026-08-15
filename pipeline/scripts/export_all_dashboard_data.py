@@ -906,15 +906,18 @@ def export_deepstate_territory(conn):
 
     Distinct from export_territory_data() (the ISW shapefile layer-type series,
     which starts 2023-11-23 and is step-functioned by ISW's editorial redraws).
-    DeepState is genuinely daily and covers the full war from 2022-04-21, so it
-    is the right primary tempo/coverage series (incl. the 2022 maneuver phases).
-    Source: war_datasets.territorial_control.deepstate_daily_areas.
+    Date coverage is near-daily from 2022-04-03, but the active occupied
+    geometry has a verified 2022-04-24--2022-09-24 content blackout. This
+    export therefore preserves the raw series; the dashboard marks the interval
+    unusable for trend inference. Source: war_datasets.deepstate_v2.features.
     """
     print("\n[15b/15] Exporting DeepState territory data...")
     data = query_to_list(conn, """
-        SELECT date, occupied_km2
-        FROM territorial_control.deepstate_daily_areas
-        ORDER BY date
+        SELECT snapshot_date AS date,
+               ST_Area(ST_Transform(ST_UnaryUnion(ST_Collect(ST_MakeValid(geom))),6933))/1e6 AS occupied_km2
+        FROM deepstate_v2.features
+        WHERE control_status='occupied'
+        GROUP BY snapshot_date ORDER BY snapshot_date
     """)
     formatted = [
         {'date': row['date'], 'occupiedKm2': round(float(row['occupied_km2']), 2)}

@@ -37,13 +37,14 @@ def month_ends(start_y, start_m, end_y, end_m):
     return [date.fromordinal(o) for o in out]
 
 def main():
-    months = month_ends(2022, 5, 2026, 6)
     iou_rows, gj_count, isw_months = [], 0, []
     with ENG.connect() as c:
+        latest_ds = c.execute(text("SELECT max(snapshot_date) FROM deepstate_v2.snapshots")).scalar_one()
+        months = month_ends(2022, 4, latest_ds.year, latest_ds.month)
         for me in months:
             mestr = me.isoformat()
             # DeepState occupied date nearest <= month-end
-            ds_date = c.execute(text("SELECT max(date) FROM territorial_control.deepstate_polygons WHERE date <= :d"), {"d": me}).scalar()
+            ds_date = c.execute(text("SELECT max(snapshot_date) FROM deepstate_v2.snapshots WHERE snapshot_date <= :d"), {"d": me}).scalar()
             # ISW ukraine_control_map date nearest <= month-end (excluding dup-flagged)
             isw_date = c.execute(text("""
                 SELECT max(sm.layer_date) FROM isw.shapefile_metadata sm
@@ -55,9 +56,11 @@ def main():
             fc = c.execute(text("""
                 SELECT json_build_object('type','FeatureCollection','features',
                   coalesce(json_agg(json_build_object('type','Feature','properties',
-                    json_build_object('name',name,'date',:dd,'layer_type',category),
-                    'geometry',ST_AsGeoJSON(ST_MakeValid(geometry))::json)), '[]'::json))
-                FROM territorial_control.deepstate_polygons WHERE date=:dd"""), {"dd": ds_date}).scalar()
+                    json_build_object('name',coalesce(name_en,name_ua,name_raw),'date',:dd,'layer_type',
+                      CASE WHEN control_status='occupied' THEN 'russian_occupied' ELSE control_status END),
+                    'geometry',ST_AsGeoJSON(ST_MakeValid(geom))::json)), '[]'::json))
+                FROM deepstate_v2.features
+                WHERE snapshot_date=:dd AND control_status IN ('occupied','liberated')"""), {"dd": ds_date}).scalar()
             (GJ / f"{mestr}.geojson").write_text(json.dumps(fc))
             gj_count += 1
             # ISW GeoJSON for this month-end: control + UA counteroffensives + RU advances + Kursk,
@@ -85,12 +88,12 @@ def main():
                 (GJ_ISW / f"{mestr}.geojson").write_text(json.dumps(fci))
                 isw_months.append(mestr)
             # monthly IoU (only where both sources present)
-            if isw_date:
+            if isw_date and isw_date >= date(2023, 11, 23):
                 row = c.execute(text("""
                     WITH isw AS (SELECT ST_Union(ST_MakeValid(cp.geometry)) g FROM isw.control_polygons cp
                                  JOIN isw.shapefile_metadata sm ON sm.id=cp.metadata_id
                                  WHERE sm.layer_type='ukraine_control_map' AND sm.layer_date=:iswd),
-                         ds AS (SELECT ST_Union(ST_MakeValid(geometry)) g FROM territorial_control.deepstate_polygons WHERE date=:dsd AND category='russian_occupied')
+                         ds AS (SELECT ST_Union(ST_MakeValid(geom)) g FROM deepstate_v2.features WHERE snapshot_date=:dsd AND control_status='occupied')
                     SELECT ST_Area(ST_Transform(isw.g,6933))/1e6 isw_km2,
                            ST_Area(ST_Transform(ds.g,6933))/1e6 ds_km2,
                            ST_Area(ST_Intersection(ST_Transform(isw.g,6933),ST_Transform(ds.g,6933)))/1e6 inter,
@@ -104,8 +107,11 @@ def main():
         # level series (daily, both sources)
         isw_lvl = {str(r.date): round(float(r.area_km2), 0) for r in c.execute(text(
             "SELECT layer_date date, area_km2 FROM isw.clean_daily_areas WHERE layer_type='ukraine_control_map' AND conflict='ukraine'"))}
-        ds_lvl = {str(r.date): round(float(r.occupied_km2), 0) for r in c.execute(text(
-            "SELECT date, occupied_km2 FROM territorial_control.deepstate_daily_areas"))}
+        ds_lvl = {str(r.date): round(float(r.occupied_km2), 0) for r in c.execute(text("""
+            SELECT snapshot_date AS date,
+                   ST_Area(ST_Transform(ST_UnaryUnion(ST_Collect(ST_MakeValid(geom))),6933))/1e6 AS occupied_km2
+            FROM deepstate_v2.features WHERE control_status='occupied'
+            GROUP BY snapshot_date ORDER BY snapshot_date"""))}
         # Territory-tab scalar series — emitted here too so the VPS cron is a single,
         # self-contained territory materialiser (no dependence on the full exporter,
         # whose non-territory tables live in schemas this DB may not match).
@@ -113,9 +119,14 @@ def main():
             "FROM isw.clean_daily_areas WHERE conflict='ukraine' ORDER BY layer_date, layer_type")).fetchall()
         (OUT / "daily_areas.json").write_text(json.dumps(
             [{"date": str(r.date), "layerType": r.layer_type, "areaKm2": round(float(r.area_km2), 2)} for r in _isw_full]))
-        _ds_full = c.execute(text("SELECT date, occupied_km2 FROM territorial_control.deepstate_daily_areas ORDER BY date")).fetchall()
+        _ds_full = c.execute(text("""
+            SELECT snapshot_date AS date,
+                   ST_Area(ST_Transform(ST_UnaryUnion(ST_Collect(ST_MakeValid(geom))),6933))/1e6 AS occupied_km2
+            FROM deepstate_v2.features WHERE control_status='occupied'
+            GROUP BY snapshot_date ORDER BY snapshot_date""")).fetchall()
         (OUT / "deepstate_daily_areas.json").write_text(json.dumps(
             [{"date": str(r.date), "occupiedKm2": round(float(r.occupied_km2), 2)} for r in _ds_full]))
+
     all_dates = sorted(set(isw_lvl) | set(ds_lvl))
     level = [{"date": d, "iswKm2": isw_lvl.get(d), "deepstateKm2": ds_lvl.get(d)} for d in all_dates]
 

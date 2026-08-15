@@ -71,8 +71,8 @@ const DATA_SOURCES: DataSource[] = [
     fullName: 'DeepState - Territorial Control',
     url: 'https://deepstatemap.live',
     description: 'Community-sourced territorial control mapping with polygon geometries showing Ukrainian vs Russian-controlled areas.',
-    dateRange: 'Feb 2022 - Present',
-    fallbackRecords: '562 territorial snapshots',
+    dateRange: 'Apr 3, 2022 - Present; Apr 24-Sep 24, 2022 excluded for trend inference',
+    fallbackRecords: 'Live count shown in the Territorial methodology panel',
     spatialResolution: 'Polygon geometries',
     updateFrequency: 'Regular updates',
     strengths: [
@@ -82,8 +82,10 @@ const DATA_SOURCES: DataSource[] = [
     ],
     limitations: [
       'Community-sourced (variable verification)',
+      'Near-daily date coverage masks a five-month 2022 occupied-geometry blackout',
+      'Control-status semantics must be kept separate (wartime occupied vs pre-2022 occupied)',
     ],
-    tables: ['territorial_control.deepstate_territory'],
+    tables: ['deepstate_v2.snapshots', 'deepstate_v2.features', 'deepstate_v2.deepstate_territory'],
   },
   {
     id: 'equipment',
