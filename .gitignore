@@ -3,6 +3,8 @@ desktop.ini
 *.log
 dist/
 .env
+.env.local
+.env.*.local
 pipeline/.env
 __pycache__/
 *.pyc
