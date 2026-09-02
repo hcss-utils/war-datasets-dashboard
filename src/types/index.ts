@@ -52,7 +52,7 @@ export interface DashboardMetadata {
   exportTimestamp: string;
 }
 
-export type TabId = 'overview' | 'conflict' | 'aerial' | 'losses' | 'humanitarian' | 'events' | 'map' | 'sources';
+export type TabId = 'overview' | 'conflict' | 'aerial' | 'losses' | 'humanitarian' | 'sanctions' | 'events' | 'map' | 'sources';
 
 export type ConflictSubtab = 'acled' | 'ucdp' | 'viina' | 'bellingcat' | 'comparison' | 'threats';
 

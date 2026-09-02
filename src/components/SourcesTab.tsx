@@ -414,6 +414,35 @@ const DATA_SOURCES: DataSource[] = [
       'conflict_events.viina_control',
     ],
   },
+  {
+    id: 'gsdb',
+    name: 'GSDB',
+    fullName: 'Global Sanctions Data Base (R5 + Financial Sanctions)',
+    url: 'https://www.globalsanctionsdatabase.com',
+    description: 'Academic dataset of the universe of sanction cases 1949-2025 — one case per sender / target / policy objective, with binary indicators for the instruments used (trade, arms, military aid, financial, travel, other), declared objectives and outcome per objective. The companion GSDB-FS decomposes the financial dimension into six subtypes (asset freeze, financial services, aid, investment restrictions, payment infrastructure, other). Shipped in a case-list and a dyadic (sender-target-year) version.',
+    dateRange: '1949 - 2025',
+    fallbackRecords: '1,794 cases (1,072 financial); 170,563 dyad-years',
+    spatialResolution: 'Country-level (sender / target)',
+    updateFrequency: 'Periodic academic release (manual)',
+    strengths: [
+      'Full historical coverage of enforced sanctions back to 1949',
+      'Instrument, objective and outcome coding per case',
+      'Financial-sanction subtype decomposition (GSDB-FS)',
+      'Dyadic panel with coalition senders expanded to member states',
+    ],
+    limitations: [
+      'Case counts measure recorded episodes, not sanction intensity',
+      'Threats are excluded — enforced measures only',
+      'Outcome coding involves coder judgement',
+      'Not auto-updated; refreshed only on a new GSDB release',
+    ],
+    tables: [
+      'gsdb.r5_cases',
+      'gsdb.r5_dyadic',
+      'gsdb.fs_cases',
+      'gsdb.fs_dyadic',
+    ],
+  },
 ];
 
 function SourceCard({

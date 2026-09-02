@@ -13,6 +13,7 @@ import UnifiedConflictEventsTab from './components/UnifiedConflictEventsTab';
 import UnifiedAerialTab from './components/UnifiedAerialTab';
 import UnifiedLossesTab from './components/UnifiedLossesTab';
 import HumanitarianTabPlotly from './components/HumanitarianTabPlotly';
+import SanctionsTab from './components/SanctionsTab';
 import type { DailyArea, MilitaryEvent, DashboardMetadata } from './types';
 
 // Lazy-load the map to avoid SSR issues with Leaflet
@@ -110,7 +111,7 @@ function DashboardContent() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.substring(1);
-      const validTabs = ['overview', 'conflict', 'aerial', 'losses', 'humanitarian', 'events', 'map', 'sources'];
+      const validTabs = ['overview', 'conflict', 'aerial', 'losses', 'humanitarian', 'sanctions', 'events', 'map', 'sources'];
 
       // Check for deep link to specific source (format: #sources-{sourceId})
       if (hash.startsWith('sources-')) {
@@ -201,6 +202,12 @@ function DashboardContent() {
       {state.activeTab === 'humanitarian' && (
         <ChartErrorBoundary name="Humanitarian">
           <HumanitarianTabPlotly />
+        </ChartErrorBoundary>
+      )}
+
+      {state.activeTab === 'sanctions' && (
+        <ChartErrorBoundary name="Sanctions">
+          <SanctionsTab />
         </ChartErrorBoundary>
       )}
 

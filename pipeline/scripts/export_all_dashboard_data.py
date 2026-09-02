@@ -466,6 +466,9 @@ DATASET_REGISTRY = [
     ("Refugees (HAPI)", "Humanitarian", "UNHCR via HDX HAPI", "humanitarian.hapi_refugees", None),
     ("IDPs (HAPI)", "Humanitarian", "IOM via HDX HAPI", "humanitarian.hapi_idps", None),
     ("Asylum applications", "Humanitarian", "UNHCR", "humanitarian.unhcr_asylum_applications", "make_date(year::int,1,1)"),
+    ("Sanction cases (GSDB-R5)", "Economic", "GSDB / Drexel-CGPA", "gsdb.r5_cases", "make_date(begin_year::int,1,1)"),
+    ("Sanction dyad-years (GSDB-R5)", "Economic", "GSDB / Drexel-CGPA", "gsdb.r5_dyadic", "make_date(year::int,1,1)"),
+    ("Financial sanction cases (GSDB-FS)", "Economic", "GSDB / Drexel-CGPA", "gsdb.fs_cases", "make_date(begin_year::int,1,1)"),
 ]
 
 
@@ -2139,6 +2142,147 @@ def export_acled_hdx(conn):
     return monthly
 
 
+def export_gsdb(conn):
+    """Export the Global Sanctions Data Base (schema gsdb) for the Sanctions tab.
+
+    GSDB-R5 = 1,794 sanction cases 1949-2025 (case + dyadic); GSDB-FS = financial
+    subtype decomposition of the 1,072 cases with a financial component.
+    Source: globalsanctionsdatabase.com (Felbermayr et al. 2020; Yotov et al. 2026).
+    """
+    print("\n[GSDB] Exporting Global Sanctions Data Base...")
+
+    # ---- headline totals -------------------------------------------------
+    tot = query_one(conn, """
+        SELECT
+          (SELECT COUNT(*) FROM gsdb.r5_cases)                                   AS r5_cases,
+          (SELECT COUNT(*) FROM gsdb.fs_cases)                                   AS fs_cases,
+          (SELECT COUNT(*) FROM gsdb.r5_dyadic)                                  AS r5_dyad_years,
+          (SELECT COUNT(*) FROM gsdb.r5_cases WHERE success LIKE '%%ongoing%%')  AS in_force,
+          (SELECT MIN(begin_year) FROM gsdb.r5_cases)                            AS first_year,
+          (SELECT MAX(begin_year) FROM gsdb.r5_cases)                            AS last_year,
+          (SELECT COUNT(DISTINCT sanctioning_state) FROM gsdb.r5_dyadic)         AS senders,
+          (SELECT COUNT(DISTINCT sanctioned_state) FROM gsdb.r5_dyadic)          AS targets
+    """)
+    instruments = query_one(conn, """
+        SELECT SUM(trade) AS trade, SUM(arms) AS arms, SUM(military) AS military,
+               SUM(financial) AS financial, SUM(travel) AS travel, SUM(other) AS other
+        FROM gsdb.r5_cases
+    """)
+    overview = {
+        "totals": {k: int(v) if v is not None else None for k, v in tot.items()},
+        "instruments": {k: int(v or 0) for k, v in instruments.items()},
+        "export_timestamp": datetime.now().isoformat(),
+    }
+    save_json(overview, "gsdb_overview.json")
+
+    # ---- cases by year: newly imposed + number in force -----------------
+    by_year = query_to_list(conn, """
+        WITH yrs AS (
+          SELECT generate_series(
+                   (SELECT MIN(begin_year)::int FROM gsdb.r5_cases),
+                   (SELECT MAX(begin_year)::int FROM gsdb.r5_cases)) AS year
+        )
+        SELECT y.year,
+               (SELECT COUNT(*) FROM gsdb.r5_cases c WHERE c.begin_year = y.year) AS new_cases,
+               (SELECT COUNT(*) FROM gsdb.r5_cases c
+                 WHERE c.begin_year <= y.year
+                   AND (c.success LIKE '%%ongoing%%' OR c.end_year >= y.year)) AS in_force
+        FROM yrs y ORDER BY y.year
+    """)
+    save_json(by_year, "gsdb_cases_by_year.json")
+
+    # ---- newly imposed instruments by year -----------------------------
+    instr_by_year = query_to_list(conn, """
+        SELECT begin_year AS year,
+               SUM(trade) AS trade, SUM(arms) AS arms, SUM(military) AS military,
+               SUM(financial) AS financial, SUM(travel) AS travel, SUM(other) AS other,
+               COUNT(*) AS cases
+        FROM gsdb.r5_cases
+        GROUP BY begin_year ORDER BY begin_year
+    """)
+    save_json(instr_by_year, "gsdb_instruments_by_year.json")
+
+    # ---- declared policy objectives (comma-separated, multi-valued) ----
+    objectives = query_to_list(conn, """
+        SELECT TRIM(obj) AS objective, COUNT(*) AS cases
+        FROM gsdb.r5_cases, LATERAL unnest(string_to_array(objective, ',')) AS obj
+        WHERE TRIM(obj) <> ''
+        GROUP BY TRIM(obj) ORDER BY cases DESC
+    """)
+    save_json(objectives, "gsdb_objectives.json")
+
+    # ---- GSDB-FS: financial sanction subtypes --------------------------
+    fs_total = tot["fs_cases"] or 1
+    subtypes = query_to_list(conn, f"""
+        SELECT TRIM(st) AS subtype, COUNT(*) AS cases,
+               ROUND(100.0 * COUNT(*) / {fs_total}, 1) AS share_pct
+        FROM gsdb.fs_cases, LATERAL unnest(string_to_array(descr_financial, ',')) AS st
+        WHERE TRIM(st) <> ''
+        GROUP BY TRIM(st) ORDER BY cases DESC
+    """)
+    save_json(subtypes, "gsdb_financial_subtypes.json")
+
+    # ---- most-sanctioned targets / most-active senders (dyadic) --------
+    top_targets = query_to_list(conn, """
+        SELECT sanctioned_state AS state,
+               COUNT(DISTINCT TRIM(unnest_case)) AS cases,
+               COUNT(*) AS dyad_years
+        FROM gsdb.r5_dyadic, LATERAL unnest(string_to_array(case_id, ',')) AS unnest_case
+        GROUP BY sanctioned_state ORDER BY cases DESC, dyad_years DESC LIMIT 20
+    """)
+    save_json(top_targets, "gsdb_top_targets.json")
+
+    top_senders = query_to_list(conn, """
+        SELECT sanctioning_state AS state,
+               COUNT(DISTINCT TRIM(unnest_case)) AS cases,
+               COUNT(*) AS dyad_years
+        FROM gsdb.r5_dyadic, LATERAL unnest(string_to_array(case_id, ',')) AS unnest_case
+        GROUP BY sanctioning_state ORDER BY cases DESC, dyad_years DESC LIMIT 20
+    """)
+    save_json(top_senders, "gsdb_top_senders.json")
+
+    # ---- Russia in focus (target = Russia), war-dashboard view ---------
+    rus_by_year = query_to_list(conn, """
+        WITH yrs AS (SELECT generate_series(1990, (SELECT MAX(begin_year)::int FROM gsdb.r5_cases)) AS year)
+        SELECT y.year,
+               (SELECT COUNT(*) FROM gsdb.r5_cases c
+                 WHERE c.begin_year = y.year AND c.sanctioned_state ILIKE '%%Russia%%') AS new_cases,
+               (SELECT COUNT(*) FROM gsdb.r5_cases c
+                 WHERE c.sanctioned_state ILIKE '%%Russia%%' AND c.begin_year <= y.year
+                   AND (c.success LIKE '%%ongoing%%' OR c.end_year >= y.year)) AS in_force
+        FROM yrs y ORDER BY y.year
+    """)
+    rus_instr = query_one(conn, """
+        SELECT SUM(trade) AS trade, SUM(arms) AS arms, SUM(military) AS military,
+               SUM(financial) AS financial, SUM(travel) AS travel, SUM(other) AS other,
+               COUNT(*) AS cases
+        FROM gsdb.r5_cases WHERE sanctioned_state ILIKE '%%Russia%%'
+    """)
+    rus_senders = query_to_list(conn, """
+        SELECT sanctioning_state AS state, COUNT(*) AS dyad_years
+        FROM gsdb.r5_dyadic WHERE sanctioned_state ILIKE '%%Russia%%'
+        GROUP BY sanctioning_state ORDER BY dyad_years DESC LIMIT 15
+    """)
+    rus_fin = query_to_list(conn, """
+        SELECT TRIM(st) AS subtype, COUNT(*) AS cases
+        FROM gsdb.fs_cases, LATERAL unnest(string_to_array(descr_financial, ',')) AS st
+        WHERE sanctioned_state ILIKE '%%Russia%%' AND TRIM(st) <> ''
+        GROUP BY TRIM(st) ORDER BY cases DESC
+    """)
+    russia = {
+        "by_year": rus_by_year,
+        "instruments": {k: int(v or 0) for k, v in rus_instr.items()},
+        "top_senders": rus_senders,
+        "financial_subtypes": rus_fin,
+    }
+    save_json(russia, "gsdb_russia.json")
+
+    print(f"  GSDB: {overview['totals']['r5_cases']} cases, "
+          f"{overview['totals']['fs_cases']} financial, "
+          f"{len(by_year)} years, {len(objectives)} objectives, {len(subtypes)} subtypes")
+    return overview
+
+
 def main():
     print("=" * 70)
     print("COMPREHENSIVE DASHBOARD DATA EXPORT")
@@ -2202,6 +2346,7 @@ def main():
         export_sabotage_infrastructure(conn)
         export_sabotage_hybrid(conn)
         export_acled_hdx(conn)
+        export_gsdb(conn)
 
         print("\n" + "=" * 70)
         print("EXPORT COMPLETE")

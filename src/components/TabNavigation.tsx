@@ -7,6 +7,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'aerial', label: 'Aerial Assaults' },
   { id: 'losses', label: 'Gains/Losses' },
   { id: 'humanitarian', label: 'Humanitarian' },
+  { id: 'sanctions', label: 'Sanctions' },
   { id: 'events', label: 'Military Events' },
   { id: 'map', label: 'Map' },
   { id: 'sources', label: 'Sources' },

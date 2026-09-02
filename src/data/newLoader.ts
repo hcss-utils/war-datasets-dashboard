@@ -323,3 +323,42 @@ export interface CivilianCasualties {
   note: string;
 }
 export const loadCivilianCasualties = () => fetchJson<CivilianCasualties>('casualties_civilian.json');
+
+// --- Global Sanctions Data Base (GSDB) — war_datasets schema `gsdb` ---
+export interface GsdbOverview {
+  totals: {
+    r5_cases: number;
+    fs_cases: number;
+    r5_dyad_years: number;
+    in_force: number;
+    first_year: number;
+    last_year: number;
+    senders: number;
+    targets: number;
+  };
+  instruments: { trade: number; arms: number; military: number; financial: number; travel: number; other: number };
+  export_timestamp: string;
+}
+export interface GsdbCasesByYear { year: number; new_cases: number; in_force: number }
+export interface GsdbInstrumentsByYear {
+  year: number; trade: number; arms: number; military: number;
+  financial: number; travel: number; other: number; cases: number;
+}
+export interface GsdbNamed { objective: string; cases: number }
+export interface GsdbFinancialSubtype { subtype: string; cases: number; share_pct: number }
+export interface GsdbState { state: string; cases: number; dyad_years: number }
+export interface GsdbRussia {
+  by_year: GsdbCasesByYear[];
+  instruments: { trade: number; arms: number; military: number; financial: number; travel: number; other: number; cases: number };
+  top_senders: { state: string; dyad_years: number }[];
+  financial_subtypes: { subtype: string; cases: number }[];
+}
+
+export const loadGsdbOverview = () => fetchJson<GsdbOverview>('gsdb_overview.json');
+export const loadGsdbCasesByYear = () => fetchJson<GsdbCasesByYear[]>('gsdb_cases_by_year.json');
+export const loadGsdbInstrumentsByYear = () => fetchJson<GsdbInstrumentsByYear[]>('gsdb_instruments_by_year.json');
+export const loadGsdbObjectives = () => fetchJson<GsdbNamed[]>('gsdb_objectives.json');
+export const loadGsdbFinancialSubtypes = () => fetchJson<GsdbFinancialSubtype[]>('gsdb_financial_subtypes.json');
+export const loadGsdbTopTargets = () => fetchJson<GsdbState[]>('gsdb_top_targets.json');
+export const loadGsdbTopSenders = () => fetchJson<GsdbState[]>('gsdb_top_senders.json');
+export const loadGsdbRussia = () => fetchJson<GsdbRussia>('gsdb_russia.json');
